@@ -1,0 +1,158 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+@import './styles/fonts.css';
+@import './styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+
+  html {
+    @apply antialiased;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg-900 font-sans text-base text-text-primary;
+    /* Inter's contextual alternates give a straight-sided lowercase l, which
+       matters on a screen full of component values and student numbers. */
+    font-feature-settings: 'cv05', 'cv08', 'ss03';
+  }
+
+  /* Headings are the same family as everything else, set tighter and heavier.
+     A separate display face was tried and removed — see src/styles/fonts.css. */
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
+    font-weight: 600;
+  }
+
+  /* Tabular figures wherever a number is being compared to another number. */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* One focus ring, defined once. Do not restyle focus per component; if the
+     ring looks wrong somewhere, that component's padding is wrong. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-bg-900;
+  }
+
+  ::selection {
+    @apply bg-accent/20 text-text-primary;
+  }
+
+  /* Scrollbars, so the dark theme does not get a bright system gutter. */
+  * {
+    scrollbar-color: hsl(var(--bg-600)) transparent;
+    scrollbar-width: thin;
+  }
+
+  /*
+   * Accessibility preferences. `.reduce-motion` is set by the app when the user
+   * turns the setting on; the media query covers the OS-level setting. Both are
+   * wired now so the Phase 7 workspace inherits them for free.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  .reduce-motion *,
+  .reduce-motion *::before,
+  .reduce-motion *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Larger-text preference — scales the whole rem-based type scale at once. */
+  .text-larger {
+    font-size: 112.5%;
+  }
+
+  /*
+   * High contrast — darkens the rules and the secondary inks rather than
+   * introducing a third palette. On light this pushes body copy toward black
+   * and turns the hairlines into visible borders; on dark it does the reverse.
+   */
+  .high-contrast {
+    --line: 215 20% 68%;
+    --line-strong: 215 20% 50%;
+    --text-secondary: 217 33% 20%;
+    --text-tertiary: 216 25% 32%;
+    --accent: 224 84% 42%;
+  }
+
+  .dark.high-contrast {
+    --line: 218 16% 40%;
+    --line-strong: 216 16% 55%;
+    --text-secondary: 210 30% 92%;
+    --text-tertiary: 213 24% 80%;
+    --accent: 212 100% 78%;
+  }
+}
+
+/**
+ * The one keyframe declared here rather than in `tailwind.config.ts`.
+ *
+ * Tailwind only emits a `@keyframes` block for an animation some class actually
+ * uses, and the circuit backdrop sets `animation` inline — each trace has its own
+ * dash length and delay, so there is no single utility to name. A config entry
+ * would be tree-shaken away and the traces would simply never draw.
+ *
+ * It still stops under `.reduce-motion`: that rule zeroes `animation-duration`
+ * on every element, which reaches an inline animation exactly as it reaches a
+ * class-driven one.
+ */
+@keyframes trace-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Staggered entrances, applied by index. Kept to six so a long list cannot
+     turn into a slow cascade, and short enough that nobody waits for them. */
+  .stagger-1 {
+    animation-delay: 40ms;
+  }
+  .stagger-2 {
+    animation-delay: 80ms;
+  }
+  .stagger-3 {
+    animation-delay: 120ms;
+  }
+  .stagger-4 {
+    animation-delay: 160ms;
+  }
+  .stagger-5 {
+    animation-delay: 200ms;
+  }
+  .stagger-6 {
+    animation-delay: 240ms;
+  }
+}

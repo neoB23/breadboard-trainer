@@ -1,0 +1,33 @@
+/**
+ * Typefaces.
+ *
+ * Two, and the second one earns its place by doing a job the first cannot:
+ *
+ *   Inter          every piece of interface and body text, and the headings
+ *                  too. It was drawn for screen UI at small sizes, its digits
+ *                  line up, and it has the language coverage a Filipino
+ *                  interface needs. Loaded from `@fontsource-variable/inter`
+ *                  in `src/index.css`.
+ *
+ *   JetBrains Mono anything measured — node ids, resistances, voltages, class
+ *                  join codes. A monospace here is not a stylistic choice: a
+ *                  student transcribing `K7M4QP` off a whiteboard needs the
+ *                  zero and the O to be different shapes.
+ *
+ * ---------------------------------------------------------------------------
+ * WHY THERE IS NO DISPLAY FACE
+ *
+ * There was one — Clash Display, a high-contrast geometric face at 40px+ with
+ * -0.03em tracking. It looked expensive and it was the wrong instrument: this
+ * is a tool a student opens at 9am in a lab and a lecturer opens to check who is
+ * stuck, and a fashion display face on that screen reads as a landing page for
+ * something they have not bought yet.
+ *
+ * Headings are Inter at a tighter tracking instead. `font-display` is kept as a
+ * separate token name so a heading is still marked as one in the markup, but it
+ * resolves to the same family.
+ * ---------------------------------------------------------------------------
+ *
+ * Both faces are self-hosted, so no request leaves for a font CDN and there is
+ * no flash of unstyled text on a slow campus connection.
+ */

@@ -1,0 +1,1963 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+      }
+      img {
+        max-width: 100%;
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <title>Smart Breadboard Diagnostic Trainer — System Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
+    <style>
+      /* ------------------------------------------------------------------
+     Palette lifted verbatim from the product's own src/styles/tokens.css,
+     so the documentation reads in the same voice as the thing it documents.
+     Light is the design target; dark is a full peer, as the brief requires.
+     ------------------------------------------------------------------ */
+      :root {
+        --bg-900: 210 20% 98%;
+        --bg-800: 0 0% 100%;
+        --bg-700: 210 20% 96%;
+        --line: 214 20% 89%;
+        --line-strong: 214 16% 78%;
+        --ink: 217 33% 14%;
+        --ink-2: 215 16% 38%;
+        --ink-3: 215 14% 50%;
+        --accent: 221 83% 51%;
+        --accent-ink: 224 76% 42%;
+        --ok: 142 71% 30%;
+        --ok-surface: 140 60% 96%;
+        --ok-line: 142 42% 76%;
+        --warn: 30 95% 38%;
+        --warn-surface: 40 92% 95%;
+        --warn-line: 36 78% 74%;
+        --fault: 0 72% 45%;
+        --fault-surface: 0 86% 97%;
+        --fault-line: 0 68% 85%;
+        --info-surface: 214 95% 96%;
+        --info-line: 215 75% 82%;
+
+        --measure: 40rem;
+        --gutter: 5.5rem;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --bg-900: 222 30% 9%;
+          --bg-800: 222 26% 12%;
+          --bg-700: 220 22% 17%;
+          --line: 220 18% 22%;
+          --line-strong: 220 14% 34%;
+          --ink: 210 30% 96%;
+          --ink-2: 214 18% 74%;
+          --ink-3: 215 16% 58%;
+          --accent: 214 95% 68%;
+          --accent-ink: 213 94% 78%;
+          --ok: 142 65% 55%;
+          --ok-surface: 145 45% 14%;
+          --ok-line: 143 35% 28%;
+          --warn: 38 92% 60%;
+          --warn-surface: 32 45% 15%;
+          --warn-line: 35 40% 30%;
+          --fault: 0 84% 66%;
+          --fault-surface: 0 40% 16%;
+          --fault-line: 0 38% 32%;
+          --info-surface: 216 45% 17%;
+          --info-line: 215 40% 33%;
+        }
+      }
+
+      :root[data-theme='dark'] {
+        --bg-900: 222 30% 9%;
+        --bg-800: 222 26% 12%;
+        --bg-700: 220 22% 17%;
+        --line: 220 18% 22%;
+        --line-strong: 220 14% 34%;
+        --ink: 210 30% 96%;
+        --ink-2: 214 18% 74%;
+        --ink-3: 215 16% 58%;
+        --accent: 214 95% 68%;
+        --accent-ink: 213 94% 78%;
+        --ok: 142 65% 55%;
+        --ok-surface: 145 45% 14%;
+        --ok-line: 143 35% 28%;
+        --warn: 38 92% 60%;
+        --warn-surface: 32 45% 15%;
+        --warn-line: 35 40% 30%;
+        --fault: 0 84% 66%;
+        --fault-surface: 0 40% 16%;
+        --fault-line: 0 38% 32%;
+        --info-surface: 216 45% 17%;
+        --info-line: 215 40% 33%;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background: hsl(var(--bg-900));
+        color: hsl(var(--ink));
+        font-family:
+          'Inter',
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        font-size: 16px;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ---- chrome ------------------------------------------------------ */
+
+      .bar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding: 0.625rem clamp(1rem, 5vw, 3rem);
+        background: hsl(var(--bg-800) / 0.92);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid hsl(var(--line));
+      }
+
+      .bar__mark {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        letter-spacing: -0.01em;
+        margin-right: auto;
+      }
+
+      .bar__mark svg {
+        display: block;
+      }
+
+      .switch {
+        display: flex;
+        gap: 2px;
+        padding: 3px;
+        background: hsl(var(--bg-700));
+        border: 1px solid hsl(var(--line));
+        border-radius: 999px;
+      }
+
+      .switch button {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: hsl(var(--ink-2));
+        font:
+          500 0.8125rem/1 'Inter',
+          sans-serif;
+        padding: 0.5rem 0.9rem;
+        border-radius: 999px;
+        cursor: pointer;
+        transition:
+          background 0.14s ease,
+          color 0.14s ease;
+      }
+
+      .switch button:hover {
+        color: hsl(var(--ink));
+      }
+
+      .switch button[aria-pressed='true'] {
+        background: hsl(var(--bg-800));
+        color: hsl(var(--accent-ink));
+        box-shadow: 0 1px 2px hsl(var(--ink) / 0.08);
+      }
+
+      .print-btn {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: 1px solid hsl(var(--line-strong));
+        background: hsl(var(--bg-800));
+        color: hsl(var(--ink));
+        font:
+          500 0.8125rem/1 'Inter',
+          sans-serif;
+        padding: 0.55rem 0.95rem;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+
+      .print-btn:hover {
+        border-color: hsl(var(--accent));
+        color: hsl(var(--accent-ink));
+      }
+
+      :focus-visible {
+        outline: 2px solid hsl(var(--accent));
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+
+      /* ---- page frame -------------------------------------------------- */
+
+      .page {
+        max-width: calc(var(--measure) + var(--gutter) + 3rem);
+        margin: 0 auto;
+        padding: 0 clamp(1rem, 5vw, 3rem) 5rem;
+      }
+
+      /* ---- cover ------------------------------------------------------- */
+
+      .cover {
+        padding: 3.5rem 0 2.5rem;
+      }
+
+      .eyebrow {
+        font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: hsl(var(--ink-3));
+      }
+
+      .cover h1 {
+        font-size: clamp(1.85rem, 4.6vw, 2.75rem);
+        line-height: 1.12;
+        letter-spacing: -0.028em;
+        font-weight: 700;
+        text-wrap: balance;
+        margin: 0.75rem 0 0;
+        max-width: 22ch;
+      }
+
+      .cover h1 em {
+        font-style: normal;
+        color: hsl(var(--accent-ink));
+      }
+
+      .cover__lead {
+        max-width: var(--measure);
+        margin: 1.25rem 0 0;
+        font-size: 1.0625rem;
+        color: hsl(var(--ink-2));
+      }
+
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+        gap: 0 2rem;
+        margin-top: 2.25rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid hsl(var(--line));
+      }
+
+      .meta div {
+        padding: 0.6rem 0;
+      }
+
+      .meta dt {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 0.6875rem;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: hsl(var(--ink-3));
+        margin: 0 0 0.2rem;
+      }
+
+      .meta dd {
+        margin: 0;
+        font-size: 0.9375rem;
+        font-weight: 500;
+      }
+
+      /* ---- tie-point rule: the board's own 0.1in grid, as a divider ----- */
+
+      .tiepoints {
+        height: 6px;
+        margin: 3rem 0;
+        background-image: radial-gradient(circle, hsl(var(--line-strong)) 1.05px, transparent 1.35px);
+        background-size: 10px 6px;
+        background-position: left center;
+        background-repeat: repeat-x;
+      }
+
+      /* ---- document sections ------------------------------------------- */
+
+      .doc > header {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        padding: 0.9rem 1.1rem;
+        background: hsl(var(--info-surface));
+        border: 1px solid hsl(var(--info-line));
+        border-radius: 10px;
+        margin-bottom: 2.75rem;
+      }
+
+      .doc > header b {
+        font-weight: 600;
+        font-size: 0.9375rem;
+      }
+      .doc > header span {
+        font-size: 0.875rem;
+        color: hsl(var(--ink-2));
+      }
+
+      section.s {
+        display: grid;
+        grid-template-columns: var(--gutter) minmax(0, 1fr);
+        column-gap: 1.5rem;
+        padding: 0 0 2.5rem;
+      }
+
+      section.s > .marker {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: hsl(var(--ink-3));
+        padding-top: 0.55rem;
+        border-top: 2px solid hsl(var(--accent));
+      }
+
+      section.s > .marker b {
+        display: block;
+        font-weight: 600;
+        color: hsl(var(--accent-ink));
+        margin-bottom: 0.15rem;
+      }
+
+      section.s > .body {
+        max-width: var(--measure);
+        min-width: 0;
+      }
+
+      section.s h2 {
+        font-size: 1.5rem;
+        line-height: 1.22;
+        letter-spacing: -0.021em;
+        font-weight: 650;
+        margin: 0.25rem 0 1rem;
+        text-wrap: balance;
+      }
+
+      h3 {
+        font-size: 1.0625rem;
+        font-weight: 600;
+        letter-spacing: -0.011em;
+        margin: 2.25rem 0 0.65rem;
+      }
+
+      h4 {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        margin: 1.6rem 0 0.5rem;
+      }
+
+      p {
+        margin: 0 0 1rem;
+      }
+      .body > p:last-child,
+      li > p:last-child {
+        margin-bottom: 0;
+      }
+
+      strong {
+        font-weight: 600;
+      }
+
+      em.term {
+        font-style: normal;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 0.9em;
+        color: hsl(var(--accent-ink));
+      }
+
+      ul,
+      ol {
+        margin: 0 0 1.15rem;
+        padding-left: 1.15rem;
+      }
+      li {
+        margin-bottom: 0.45rem;
+      }
+      li::marker {
+        color: hsl(var(--ink-3));
+      }
+
+      /* ---- tables ------------------------------------------------------ */
+
+      .tablewrap {
+        overflow-x: auto;
+        margin: 1.25rem 0 1.5rem;
+        border: 1px solid hsl(var(--line));
+        border-radius: 10px;
+        background: hsl(var(--bg-800));
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.6rem 0.85rem;
+        border-bottom: 1px solid hsl(var(--line));
+        vertical-align: top;
+      }
+
+      thead th {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 0.6875rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: hsl(var(--ink-3));
+        font-weight: 500;
+        background: hsl(var(--bg-700));
+        white-space: nowrap;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      /* ---- callouts ---------------------------------------------------- */
+
+      .note {
+        border-left: 3px solid hsl(var(--accent));
+        padding: 0.1rem 0 0.1rem 1.1rem;
+        margin: 1.5rem 0;
+        color: hsl(var(--ink-2));
+      }
+
+      .diagnosis {
+        border: 1px solid hsl(var(--fault-line));
+        background: hsl(var(--fault-surface));
+        border-radius: 10px;
+        padding: 1rem 1.15rem;
+        margin: 1.5rem 0;
+      }
+
+      .diagnosis .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 0.6875rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: hsl(var(--fault));
+        margin-bottom: 0.5rem;
+      }
+
+      .diagnosis p {
+        margin: 0 0 0.6rem;
+        font-size: 0.9375rem;
+      }
+      .diagnosis p:last-child {
+        margin: 0;
+      }
+
+      .diagnosis .ask {
+        color: hsl(var(--ink-2));
+        font-style: italic;
+        padding-top: 0.6rem;
+        border-top: 1px dashed hsl(var(--fault-line));
+      }
+
+      /* ---- targets grid ------------------------------------------------ */
+
+      .targets {
+        border: 1px solid hsl(var(--line));
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 1.5rem 0;
+      }
+
+      .targets div {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.7rem 1rem;
+        background: hsl(var(--bg-800));
+        border-bottom: 1px solid hsl(var(--line));
+        font-size: 0.9375rem;
+      }
+
+      .targets div:last-child {
+        border-bottom: 0;
+      }
+
+      .targets b {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: hsl(var(--ok));
+        white-space: nowrap;
+      }
+
+      /* ---- status pills ------------------------------------------------ */
+
+      .pill {
+        display: inline-block;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        padding: 0.14rem 0.5rem;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+
+      .pill--done {
+        color: hsl(var(--ok));
+        background: hsl(var(--ok-surface));
+        border: 1px solid hsl(var(--ok-line));
+      }
+      .pill--plan {
+        color: hsl(var(--ink-3));
+        background: hsl(var(--bg-700));
+        border: 1px solid hsl(var(--line));
+      }
+      .pill--block {
+        color: hsl(var(--warn));
+        background: hsl(var(--warn-surface));
+        border: 1px solid hsl(var(--warn-line));
+      }
+
+      footer.end {
+        max-width: var(--measure);
+        margin-left: calc(var(--gutter) + 1.5rem);
+        padding-top: 1.75rem;
+        border-top: 1px solid hsl(var(--line));
+        font-size: 0.8125rem;
+        color: hsl(var(--ink-3));
+      }
+
+      @media (max-width: 720px) {
+        section.s {
+          grid-template-columns: 1fr;
+          row-gap: 0.75rem;
+        }
+        section.s > .marker {
+          border-top: 0;
+          padding-top: 0;
+        }
+        footer.end {
+          margin-left: 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+
+      /* ---- print: both documents, clean, page-broken ------------------- */
+
+      @media print {
+        @page {
+          margin: 18mm 16mm;
+        }
+
+        .bar,
+        .print-hint {
+          display: none !important;
+        }
+
+        /* Both documents belong in the PDF regardless of what is on screen. */
+        .doc[hidden] {
+          display: block !important;
+        }
+
+        body {
+          background: #fff;
+          color: #101828;
+          font-size: 10.5pt;
+          line-height: 1.5;
+        }
+
+        .page {
+          max-width: none;
+          padding: 0;
+        }
+        .cover {
+          padding: 0 0 1.5rem;
+        }
+        .cover h1 {
+          font-size: 22pt;
+        }
+
+        .doc {
+          break-before: page;
+        }
+        #doc-technical {
+          break-before: auto;
+        }
+
+        section.s {
+          break-inside: avoid-page;
+          padding-bottom: 1.25rem;
+        }
+        h2,
+        h3,
+        h4 {
+          break-after: avoid-page;
+        }
+        .tablewrap,
+        .diagnosis,
+        .targets,
+        .note {
+          break-inside: avoid-page;
+        }
+        table {
+          font-size: 9pt;
+        }
+        thead th {
+          background: #f2f4f7;
+        }
+
+        .doc > header {
+          background: #f2f6ff;
+          border-color: #c8d8f7;
+        }
+        .tiepoints {
+          margin: 1.5rem 0;
+        }
+      }
+    </style>
+
+    <div class="bar">
+      <span class="bar__mark">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <rect
+            x="1"
+            y="3.5"
+            width="18"
+            height="13"
+            rx="2"
+            stroke="currentColor"
+            stroke-width="1.2"
+            opacity="0.45"
+          />
+          <line x1="1" y1="10" x2="19" y2="10" stroke="currentColor" stroke-width="1.2" opacity="0.45" />
+          <g fill="hsl(var(--accent))">
+            <circle cx="5" cy="6.5" r="1" />
+            <circle cx="8.5" cy="6.5" r="1" />
+            <circle cx="12" cy="6.5" r="1" />
+            <circle cx="15.5" cy="6.5" r="1" />
+            <circle cx="5" cy="13.5" r="1" />
+            <circle cx="8.5" cy="13.5" r="1" />
+            <circle cx="12" cy="13.5" r="1" />
+            <circle cx="15.5" cy="13.5" r="1" />
+          </g>
+        </svg>
+        Breadboard Trainer
+      </span>
+
+      <div class="switch" role="group" aria-label="Choose a document">
+        <button type="button" data-show="doc-technical" aria-pressed="true">Technical</button>
+        <button type="button" data-show="doc-general" aria-pressed="false">General reader</button>
+      </div>
+
+      <button type="button" class="print-btn" id="print">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path
+            d="M4.5 6V2.5h7V6M4.5 12H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1.5M4.5 10h7v3.5h-7z"
+            stroke="currentColor"
+            stroke-width="1.2"
+            stroke-linejoin="round"
+          />
+        </svg>
+        Save as PDF
+      </button>
+    </div>
+
+    <main class="page">
+      <div class="cover">
+        <p class="eyebrow">Capstone project documentation</p>
+        <h1>Smart Breadboard <em>Diagnostic Trainer</em></h1>
+        <p class="cover__lead">
+          A web replacement for the hardware breadboard trainer. Students build a circuit in a 3D workspace;
+          the system extracts the netlist they actually built, sets it against the instructor's captured
+          reference, and names the difference — which pin, which row, which rail. Two documents follow: one
+          written for a technical reader, one for a general one.
+        </p>
+
+        <dl class="meta">
+          <div>
+            <dt>Document</dt>
+            <dd>Version 1.0</dd>
+          </div>
+          <div>
+            <dt>Date</dt>
+            <dd>September 2026</dd>
+          </div>
+          <div>
+            <dt>Domain</dt>
+            <dd>Electronics laboratory instruction</dd>
+          </div>
+          <div>
+            <dt>Build status</dt>
+            <dd>Phases 0&ndash;5 complete</dd>
+          </div>
+        </dl>
+
+        <p class="eyebrow print-hint" style="margin-top: 1.75rem">
+          Both documents print. Save as PDF emits the technical version first, then the general one.
+        </p>
+      </div>
+
+      <div class="tiepoints" aria-hidden="true"></div>
+
+      <!-- ================= DOCUMENT 1 — TECHNICAL ======================= -->
+
+      <article class="doc" id="doc-technical">
+        <header>
+          <b>Document 1 &middot; Technical overview</b>
+          <span>Light technical vocabulary. For the systems chapter and the defence panel.</span>
+        </header>
+
+        <section class="s">
+          <div class="marker"><b>01</b>Title</div>
+          <div class="body">
+            <h2>
+              Smart Breadboard Diagnostic Trainer: a web-based circuit construction and fault diagnosis system
+              for electronics laboratory instruction
+            </h2>
+            <p>Short title: <strong>Breadboard Trainer</strong>.</p>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="marker"><b>02</b>Summary</div>
+          <div class="body">
+            <p>
+              The Smart Breadboard Diagnostic Trainer is a web application that replaces the physical
+              breadboard trainer used in electronics laboratory classes. Students assemble a circuit on a
+              full-size solderless breadboard rendered in 3D inside the browser — placing resistors, LEDs,
+              capacitors, transistors, integrated circuits and jumper wires into tie-points exactly as they
+              would on real hardware.
+            </p>
+            <p>
+              The difference from a drawing tool is what happens after the circuit is built. The system reads
+              the board <strong>electrically</strong> rather than visually. It walks every occupied tie-point,
+              merges the ones that are physically bonded into a single electrical <em class="term">node</em>,
+              and produces a <em class="term">netlist</em> — a formal list of which component terminal is
+              connected to which node. That netlist is compared against a
+              <em class="term">golden netlist</em>: the reference circuit the instructor built once in Learn
+              Mode and saved with the exercise.
+            </p>
+            <p>
+              Because the comparison happens on the netlist and not on the picture, a student who builds the
+              correct circuit on row 20 instead of row 12 is marked correct. Only genuine electrical
+              differences register. When a difference is found the system does not return a score — it returns
+              a diagnosis in the vocabulary of the board, together with a guiding question that leaves the
+              isolation work with the student.
+            </p>
+
+            <div class="diagnosis">
+              <div class="tag">
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                  <path
+                    d="M6 1.5 11 10.5H1z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.3"
+                    stroke-linejoin="round"
+                  />
+                  <path d="M6 5v2.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                  <circle cx="6" cy="8.9" r="0.65" fill="currentColor" />
+                </svg>
+                Open circuit &middot; D1
+              </div>
+              <p>
+                <strong>D1 cathode never reaches ground.</strong> The jumper sits on the far side of the
+                centre channel, so row 14 and row 15 are two nets rather than one.
+              </p>
+              <p class="ask">Which side of the channel does that jumper need to be on?</p>
+            </div>
+
+            <p>
+              A second analysis path runs alongside the comparator. A DC circuit solver based on
+              <strong>modified nodal analysis</strong> evaluates the built circuit to answer behavioural
+              questions — does the LED actually conduct, is the current within range, is a node floating — so
+              faults that are electrically valid but functionally wrong are still caught.
+            </p>
+            <p>
+              Every student action is logged as a timestamped event. Those events drive per-class analytics
+              for instructors, and they supply the research component of this capstone with its measurable
+              outcomes.
+            </p>
+
+            <h3>Architecture at a glance</h3>
+            <div class="tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Layer</th>
+                    <th>Technology</th>
+                    <th>Responsibility</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Client</td>
+                    <td>React 19 + TypeScript, Vite</td>
+                    <td>All screens, the 3D workspace, and the entire diagnostic engine</td>
+                  </tr>
+                  <tr>
+                    <td>3D rendering</td>
+                    <td>Three.js via React Three Fiber</td>
+                    <td>Breadboard, components, fault highlighting</td>
+                  </tr>
+                  <tr>
+                    <td>Client state</td>
+                    <td>Zustand</td>
+                    <td>Session, board state, preferences</td>
+                  </tr>
+                  <tr>
+                    <td>Styling</td>
+                    <td>Tailwind CSS, locked token palette</td>
+                    <td>Consistent, accessible presentation</td>
+                  </tr>
+                  <tr>
+                    <td>API</td>
+                    <td>Hono, serverless functions</td>
+                    <td>Persistence and the entire security boundary</td>
+                  </tr>
+                  <tr>
+                    <td>Database</td>
+                    <td>Neon (serverless PostgreSQL)</td>
+                    <td>Users, classes, exercises, attempts, events</td>
+                  </tr>
+                  <tr>
+                    <td>Migrations</td>
+                    <td>Drizzle ORM + drizzle-kit</td>
+                    <td>Schema as code, versioned migrations</td>
+                  </tr>
+                  <tr>
+                    <td>Authentication</td>
+                    <td>Better Auth, self-hosted</td>
+                    <td>Sessions, verification, password reset</td>
+                  </tr>
+                  <tr>
+                    <td>Validation</td>
+                    <td>Zod contracts shared by both tiers</td>
+                    <td>One definition of every request and response</td>
+                  </tr>
+                  <tr>
+                    <td>Testing</td>
+                    <td>Vitest, Testing Library, Playwright</td>
+                    <td>Unit, API and real-browser suites</td>
+                  </tr>
+                  <tr>
+                    <td>Hosting</td>
+                    <td>Vercel and Neon</td>
+                    <td>Single-origin deployment</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>Three decisions that define the system</h3>
+            <p>
+              <strong>1. The diagnostic engine runs in the browser, not on the server.</strong> Feedback must
+              arrive while the student's hand is still on the component. A round trip to a serverless function
+              introduces cold-start latency that would make live diagnosis feel broken. The API stores and
+              retrieves; it never diagnoses.
+            </p>
+            <p>
+              <strong>2. The browser never holds a database credential.</strong> Neon is only PostgreSQL — no
+              client SDK, no row-level policy layer that can be safely exposed to a browser. That forces an
+              API tier into the architecture, and that tier becomes the entire security boundary. The
+              consequence is the important part: because no client ever queries the database, it is
+              <em>structurally impossible</em> for a student client to receive a golden netlist.
+            </p>
+            <p>
+              <strong>3. The board logic is pure.</strong> Hole addressing, node collapsing, netlist
+              extraction and the solver are forbidden from importing React or Three.js. They are plain
+              TypeScript. That is what allows thousands of headless fault cases to run in seconds, which is
+              what makes the accuracy figures reproducible on demand.
+            </p>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="marker"><b>03</b>Features</div>
+          <div class="body">
+            <h3>A. Student features</h3>
+
+            <h4>Account and enrolment</h4>
+            <ul>
+              <li>
+                Registration with email verification, sign-in with a remembered session, password reset and
+                change-password. Sessions ride in httpOnly, Secure, SameSite=Lax cookies — no token is placed
+                in browser storage, so a cross-site scripting bug cannot hand over an account.
+              </li>
+              <li>
+                A three-step first-run onboarding: confirm name and student number, join a class by
+                six-character code, and a short orientation screen.
+              </li>
+              <li>
+                Settings for name, password, language and accessibility. Preferences are stored server-side
+                against the profile, so they follow the student to any lab machine.
+              </li>
+            </ul>
+
+            <h4>Dashboard and exercise library</h4>
+            <ul>
+              <li>
+                Enrolled classes, with per-class completion counted from the student's own exercise list.
+              </li>
+              <li>
+                A featured exercise showing the board it builds, reading <strong>Resume</strong> only when an
+                attempt is genuinely still open and <strong>Start</strong> otherwise.
+              </li>
+              <li>
+                The full assigned library as rows — unfinished first, finished last — so the screen behaves
+                identically at one exercise and at twenty.
+              </li>
+              <li>
+                An exercise brief per exercise: objective, bill of materials, difficulty, schematic, attempt
+                history.
+              </li>
+              <li>
+                Designed empty states and skeleton loaders on every list, so nothing is a blank region and no
+                layout shifts when data arrives.
+              </li>
+            </ul>
+
+            <h4>The 3D workspace</h4>
+            <ul>
+              <li>
+                A full-size solderless breadboard with a correct tie-point grid, centre channel, four power
+                rails and printed row labels. Hole geometry is merged into a single instanced mesh so the
+                scene holds 60fps on integrated graphics.
+              </li>
+              <li>
+                An orthographic camera with constrained orbit controls — the view cannot reach a below-board
+                or confusing angle.
+              </li>
+              <li>
+                Drag from the bill-of-materials tray onto the board with mathematical hole snapping. Two-lead
+                parts are placed hole by hole with a live lead-path preview; DIP integrated circuits straddle
+                the centre channel with orientation and correct pin-to-hole mapping.
+              </li>
+              <li>Select, move, rotate and delete, with a full undo/redo stack.</li>
+              <li>
+                Placement is refused with a stated reason — occupied hole, span too long, invalid IC position
+                — never silently.
+              </li>
+              <li>
+                Board state is serialised on every change, so refreshing mid-build restores the exact board.
+              </li>
+              <li>A WebGL-unsupported fallback screen for machines that cannot render the workspace.</li>
+            </ul>
+
+            <h4>Diagnosis and feedback</h4>
+            <ul>
+              <li>
+                <strong>Tier 1 — intrinsic rules.</strong> Faults detectable without the reference circuit,
+                evaluated on every placement: a component straddled across one node, a non-IC bridging the
+                centre channel, an IC not straddling it, a floating lead, a self-jumper, a direct
+                supply-to-ground short, rail continuity wrongly assumed across the mid-board gap, and reversed
+                polarity on a polarised part. Each rule is a pure, individually unit-tested function.
+              </li>
+              <li>
+                A <strong>construction-progress heuristic</strong> suppresses open-circuit and floating-lead
+                warnings during normal building — a dangling lead is a fault only once the student marks a
+                subcircuit complete or leaves it untouched for eight seconds. Without this the tool nags, and
+                a nagging tool is abandoned.
+              </li>
+              <li>
+                <strong>Tier 2 — the comparator.</strong> Student and golden netlists are matched
+                component-to-component on type and value, then compared by graph edit distance under a
+                depth-limited A* search capped at four edits. Each edit maps to a named fault: an added edge
+                is an open circuit, a deleted edge an extra wire, a moved endpoint a misplaced lead, an
+                adjacent move an off-by-one row, a swapped pair reversed polarity, an attribute change an
+                out-of-tolerance value. Beyond the cap the system reports &ldquo;substantially
+                different&rdquo; rather than guessing.
+              </li>
+              <li>
+                Only the most upstream fault is reported when several are present, so the student fixes causes
+                rather than symptoms.
+              </li>
+              <li>
+                <strong>The DC solver.</strong> Modified nodal analysis with Gaussian elimination; stamps for
+                resistors, DC sources, diodes and LEDs, with capacitors open at DC. A singular matrix is
+                caught and mapped to a floating-node fault rather than crashing.
+              </li>
+              <li>
+                <strong>Fault presentation.</strong> The offending strip pulses in 3D while the rest of the
+                board dims. A feedback card carries the fault class, a plain-language cause and a guiding
+                question; a &ldquo;show me&rdquo; button focuses the camera on the row.
+              </li>
+              <li>
+                A <strong>hint ladder</strong> with three deliberate steps — guiding question, narrowed hint,
+                explicit correction. Each requires a click and each is logged, which is what makes
+                &ldquo;resolved without help&rdquo; a measurable quantity.
+              </li>
+              <li>
+                Every fault indicator carries an icon and a text label.
+                <strong>No fault is ever communicated by colour alone</strong>, anywhere in the application.
+              </li>
+            </ul>
+
+            <h4>Offline capability</h4>
+            <ul>
+              <li>Installable as a Progressive Web App on Android and desktop.</li>
+              <li>
+                Assigned exercises and their metadata are cached, so an exercise can be completed with the
+                network disabled after first load.
+              </li>
+              <li>
+                Attempts and events queue in IndexedDB offline and synchronise on reconnect with no loss and
+                no duplication, behind a visible connection indicator.
+              </li>
+            </ul>
+
+            <h4>Accessibility and language</h4>
+            <ul>
+              <li>
+                English and Filipino throughout. The catalogue is typed such that a missing translation key is
+                a <strong>build error</strong>, not a silent fallback to English — the only way the claim
+                &ldquo;no hardcoded English remains&rdquo; can honestly be made. Technical vocabulary
+                (netlist, breadboard, resistor, node, rail) stays in English in both catalogues, because
+                Philippine electronics engineering is taught in English and inventing Tagalog equivalents
+                would produce a vocabulary that matches nothing the student meets again.
+              </li>
+              <li>
+                High-contrast, reduced-motion and larger-text toggles, wired to real CSS and to the 3D scene's
+                camera easing.
+              </li>
+              <li>
+                Every interactive element has a visible keyboard focus ring; the application is fully operable
+                by keyboard.
+              </li>
+              <li>
+                The state palette is verified under simulated deuteranopia using a real colour-matrix filter
+                built into the internal styleguide route, so the claim is checkable rather than asserted.
+              </li>
+            </ul>
+
+            <h3>B. Instructor features</h3>
+            <ul>
+              <li>
+                <strong>Class management.</strong> Create classes with an auto-generated six-character join
+                code; view and manage the roster; remove students; regenerate the code.
+              </li>
+              <li>
+                <strong>Exercise authoring.</strong> Title, objective, difficulty, bill of materials,
+                schematic upload and a publish toggle. Uploads use a presigned URL issued by the API, so
+                storage credentials never reach the browser, and content type and size are validated
+                server-side before the URL is issued.
+              </li>
+              <li>
+                <strong>Learn Mode</strong> — the feature the diagnostic premise rests on. The instructor
+                builds the reference circuit once in the same 3D workspace students use, previews the
+                extracted netlist in readable form, and saves it as the exercise's golden netlist. Capture is
+                validated: floating leads, shorts or unused bill-of-materials components are refused with a
+                specific reason. Re-capture increments a version and warns about existing attempts.
+              </li>
+              <li>
+                <strong>Analytics.</strong> Per class: most common fault classes, average fault isolation
+                time, self-resolution rate, students flagged as struggling. Per student: an attempt drill-down
+                with a fault timeline. Everything exports to CSV.
+              </li>
+            </ul>
+
+            <h3>C. Security and integrity</h3>
+            <p>
+              The golden netlist reaching a student client would invalidate the premise of the system, so it
+              is defended in depth rather than once:
+            </p>
+            <ol>
+              <li>
+                <strong>Column projection.</strong> Two select projections exist for exercises — one omitting
+                the golden netlist, one including it. Student-facing handlers may only use the former.
+              </li>
+              <li>
+                <strong>A serializer whitelist</strong>, applied to every student-bound response object.
+              </li>
+              <li>
+                <strong>A response tripwire</strong> that scans outbound student JSON for a golden-netlist key
+                at any depth and refuses the response if one is found.
+              </li>
+              <li>
+                <strong>A build-time bundle check</strong> that greps the compiled JavaScript to prove no
+                golden-netlist-shaped string and no database connection string ships to the browser. It has
+                already caught two real leaks — a barrel import dragging an instructor schema into the student
+                bundle, and a development-only guard surviving minification as a property read.
+              </li>
+            </ol>
+            <ul>
+              <li>
+                Session middleware on every route; role middleware on every instructor route; explicit
+                ownership assertions in every handler taking an ID, so one student cannot read another's
+                attempt.
+              </li>
+              <li>
+                <strong>Self-registration cannot produce an instructor account.</strong> The role requires an
+                invite code and fails closed — with no code configured, no instructor account can be created
+                at all. Without this, any student could read every golden netlist by registering as faculty.
+              </li>
+              <li>Rate limiting on sign-in and password reset.</li>
+              <li>
+                Single-use verification and reset links, with expired links distinguished from forged ones so
+                a resend button appears only when that is the right answer.
+              </li>
+              <li>
+                Sign-in failure messages are deliberately silent about which half was wrong, so the endpoint
+                is not an account-existence oracle.
+              </li>
+            </ul>
+
+            <h3>D. Evaluation harness</h3>
+            <p>Built as a first-class feature, because the results chapter depends on it.</p>
+            <ul>
+              <li>
+                A seeded corpus of <strong>150 fault fixtures</strong> covering every fault class in
+                proportion to its expected frequency.
+              </li>
+              <li>
+                At least <strong>20 negative cases</strong> — correct circuits deliberately built on different
+                rows, which must produce zero faults. This is the headline metric.
+              </li>
+              <li>
+                A headless runner that loads a fixture, runs the comparator and compares the result to the
+                expected diagnosis.
+              </li>
+              <li>
+                A report generator producing localisation accuracy, classification accuracy, false-positive
+                rate and a per-class confusion matrix, suitable for direct inclusion in the appendix.
+              </li>
+              <li>
+                Wired into continuous integration, so accuracy is recomputed on every push and cannot silently
+                regress.
+              </li>
+            </ul>
+
+            <div class="targets">
+              <div><span>Fault localisation accuracy</span><b>&ge; 90%</b></div>
+              <div><span>Fault classification accuracy</span><b>&ge; 85%</b></div>
+              <div><span>False positives on correct builds</span><b>&le; 5%</b></div>
+              <div><span>ISO/IEC 25010 weighted mean</span><b>&ge; 4.20</b></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="marker"><b>04</b>Target user</div>
+          <div class="body">
+            <h3>Primary &mdash; the electronics student</h3>
+            <p>
+              A second-year electronics or electrical engineering student in a laboratory course, typically 18
+              to 21, on a school computer or a mid-range laptop with integrated graphics. Competent with a
+              browser; not a developer.
+            </p>
+            <p>
+              What they need is specific. On a physical breadboard, a circuit that does not work presents as
+              <em>nothing happening</em> — an LED that stays dark says that something is wrong and nothing
+              about what. The productive skill in laboratory work is fault isolation, and it is exactly the
+              skill a silent breadboard cannot teach, because there is no feedback loop. The student asks the
+              instructor, waits, and is told the answer — which teaches them how to get answers rather than
+              how to find faults.
+            </p>
+            <p>
+              This system closes that loop. The student gets an immediate, specific, non-punitive statement of
+              what is electrically different about their circuit, phrased as a question they can act on. The
+              hint ladder makes the answer available but never free, so isolating the fault remains their
+              work.
+            </p>
+            <p>
+              Secondary needs the design accounts for: unreliable campus network access (hence offline
+              capability), shared lab machines (hence server-side preferences), a bilingual environment (hence
+              English and Filipino), and colour vision deficiency, which affects roughly one man in twelve — a
+              significant proportion of an electronics cohort, in a domain that traditionally signals
+              everything with red and green.
+            </p>
+
+            <h3>Primary &mdash; the laboratory instructor</h3>
+            <p>
+              A faculty member teaching one or more sections of thirty to forty students. Their constraint is
+              arithmetic: one instructor cannot inspect forty breadboards in a two-hour session, so most
+              students spend most of the session waiting or stuck.
+            </p>
+            <p>
+              The system gives them three things. Learn Mode lets them define the correct answer once, by
+              building it, rather than by writing a specification. The diagnostic engine absorbs the routine
+              faults — the missing jumper, the reversed LED, the resistor bridging the channel — which frees
+              their attention for students who are genuinely lost. And the analytics turn a class into data:
+              which fault classes recur, which exercises are too hard, which students are struggling before
+              they say so.
+            </p>
+
+            <h3>Secondary &mdash; the department and the researcher</h3>
+            <p>
+              The department gains a laboratory activity that runs without consumable hardware, without
+              damaged components, and outside scheduled hours. The cost of an additional student is
+              effectively zero. For the research component, the telemetry that drives instructor analytics
+              also produces the measurements: fault isolation time per fault, self-resolution rate and hint
+              escalation depth, all computable from raw event timestamps and auditable against the raw log.
+            </p>
+
+            <h3>Who this system is not for</h3>
+            <p>Stated deliberately, because scope discipline is what protects the delivery date.</p>
+            <ul>
+              <li>
+                It is <strong>not</strong> a general electronics CAD or PCB design tool. The board is a
+                solderless breadboard and only a solderless breadboard.
+              </li>
+              <li>
+                It is <strong>not</strong> an AC or transient simulator. Analysis is DC only, and that is
+                written into the scope.
+              </li>
+              <li>
+                It is <strong>not</strong> an autograder. It diagnoses and teaches; the grade remains the
+                instructor's.
+              </li>
+              <li>
+                Generative AI appears nowhere in the diagnostic path. Every diagnosis is produced by a pure,
+                unit-tested, deterministic function, which is what makes the accuracy figures meaningful and
+                the results reproducible.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="marker"><b>App. A</b>Status</div>
+          <div class="body">
+            <h2>Implementation status</h2>
+            <p>
+              Stated honestly, because a documentation section that overclaims is the first thing a panel will
+              find.
+            </p>
+            <div class="tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Phase</th>
+                    <th>Scope</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>0</td>
+                    <td>Project setup, tooling, single-origin dev proxy</td>
+                    <td><span class="pill pill--done">Complete</span></td>
+                  </tr>
+                  <tr>
+                    <td>1</td>
+                    <td>Design system, tokens, 16 primitives, styleguide route</td>
+                    <td><span class="pill pill--done">Complete</span></td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>Database schema, migrations, API foundation, security middleware</td>
+                    <td><span class="pill pill--done">Complete</span></td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td>Authentication, verification, reset, role guards</td>
+                    <td><span class="pill pill--done">Complete</span></td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td>Onboarding, class join, profile and accessibility settings</td>
+                    <td><span class="pill pill--done">Complete</span></td>
+                  </tr>
+                  <tr>
+                    <td>5</td>
+                    <td>Student dashboard and exercise library</td>
+                    <td><span class="pill pill--done">Complete</span></td>
+                  </tr>
+                  <tr>
+                    <td>6</td>
+                    <td>Instructor shell and exercise authoring</td>
+                    <td><span class="pill pill--plan">Planned</span></td>
+                  </tr>
+                  <tr>
+                    <td>7&ndash;8</td>
+                    <td>Workspace shell, polish, usability pre-test</td>
+                    <td><span class="pill pill--plan">Planned</span></td>
+                  </tr>
+                  <tr>
+                    <td>9&ndash;12</td>
+                    <td>Board geometry, placement, netlist extraction, Learn Mode</td>
+                    <td><span class="pill pill--plan">Planned</span></td>
+                  </tr>
+                  <tr>
+                    <td>13&ndash;16</td>
+                    <td>Tier 1 rules, comparator, fault presentation, DC solver</td>
+                    <td><span class="pill pill--plan">Planned</span></td>
+                  </tr>
+                  <tr>
+                    <td>17&ndash;19</td>
+                    <td>Telemetry, instructor analytics, offline and PWA</td>
+                    <td><span class="pill pill--plan">Planned</span></td>
+                  </tr>
+                  <tr>
+                    <td>20&ndash;21</td>
+                    <td>Evaluation harness, pilot and ISO/IEC 25010 evaluation</td>
+                    <td><span class="pill pill--plan">Planned</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p>
+              <strong>Verification as of this document:</strong> the production build compiles with zero
+              TypeScript errors across the application, API, tests and configuration; the linter reports
+              warnings only; <strong>128 automated tests pass</strong> across nine files against a real
+              PostgreSQL instance; and <strong>23 end-to-end tests pass in a real browser</strong>, covering
+              registration through sign-out, the reset link, the role guard, the instructor gate, both
+              languages, reduced motion, and a check that nothing credential-shaped reaches browser storage.
+            </p>
+            <p>
+              Three checklist items remain unticked across the completed phases.
+              <span class="pill pill--block">Blocked on accounts</span> — all three wait on cloud services
+              that have not yet been provisioned (the hosted database, the deployment platform and the code
+              repository), not on unwritten code.
+            </p>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="marker"><b>App. B</b>Method</div>
+          <div class="body">
+            <h2>Evaluation methodology</h2>
+            <p>The system is evaluated on two axes.</p>
+            <p>
+              <strong>Technical accuracy</strong> is measured by the evaluation harness against the
+              150-fixture corpus, and reported as localisation accuracy, classification accuracy,
+              false-positive rate and a per-class confusion matrix.
+            </p>
+            <p>
+              <strong>Product quality</strong> is measured against <strong>ISO/IEC 25010</strong> across
+              functional suitability, performance efficiency, usability, reliability and portability, with a
+              target weighted mean of <strong>&ge; 4.20</strong>.
+            </p>
+            <p>
+              A pilot with at least 30 student participants runs the same exercises under two conditions: an
+              experimental group with diagnostics enabled, and a control group whose feedback panel reports
+              pass or fail only. The comparison of fault isolation time between the two groups, with a test of
+              statistical significance, supports the project's central efficiency claim.
+            </p>
+            <p>
+              A formative usability pre-test with five students precedes all of it, run against the student
+              shell before any diagnostic logic exists — which is the reason the application was deliberately
+              built as a complete, usable, empty shell first.
+            </p>
+          </div>
+        </section>
+      </article>
+
+      <!-- ================= DOCUMENT 2 — GENERAL ========================= -->
+
+      <article class="doc" id="doc-general" hidden>
+        <header>
+          <b>Document 2 &middot; General overview</b>
+          <span>No technical background assumed. For readers outside electronics and computing.</span>
+        </header>
+
+        <section class="s">
+          <div class="marker"><b>01</b>Title</div>
+          <div class="body">
+            <h2>
+              Smart Breadboard Diagnostic Trainer: a practice laboratory for electronics students that
+              explains what went wrong
+            </h2>
+            <p>Short title: <strong>Breadboard Trainer</strong>.</p>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="marker"><b>02</b>Summary</div>
+          <div class="body">
+            <h3>The problem, in plain terms</h3>
+            <p>
+              Electronics students learn by building small circuits — a battery, a light, a few components,
+              connected by wires. They build them on a <strong>breadboard</strong>: a small plastic board
+              covered in tiny holes, where pushing a wire into a hole connects it to whatever else is in the
+              same row. It is the electronics equivalent of a practice sketchpad. Nothing is glued or
+              soldered, so a circuit can be built, taken apart and built again.
+            </p>
+            <p>The problem is what happens when the circuit does not work.</p>
+            <p>
+              A wrong circuit does not announce itself. The light simply does not turn on. There is no error
+              message, no red underline, no hint. The student is left staring at a board of forty wires with
+              no idea which one is the mistake — and the mistake is usually tiny: a wire one hole too far to
+              the left, a component inserted backwards, a connection that was never made at all.
+            </p>
+            <p>
+              So the student raises a hand and waits. The instructor, who has thirty to forty other students
+              in the same two-hour session, eventually arrives, glances at the board and points at the wire.
+              The student fixes it and moves on.
+            </p>
+            <p>
+              Nobody learned anything from that exchange. The student learned that asking works. What they
+              were supposed to learn — how to find the mistake themselves — is the one thing the session never
+              taught, because there was no way to practise it.
+            </p>
+
+            <h3>What this system does</h3>
+            <p>
+              The Smart Breadboard Diagnostic Trainer moves the practice board into the computer, and gives it
+              the one thing the real board cannot have: <strong>the ability to explain itself</strong>.
+            </p>
+            <p>
+              A student opens the exercise in a web browser and sees a realistic breadboard in 3D, which can
+              be rotated and zoomed. They drag components onto it and push wires into holes, in the same way
+              and in the same order as they would on the real thing.
+            </p>
+            <p>
+              Behind the scenes, the system is not watching what the board <em>looks</em> like. It is tracking
+              what is electrically connected to what — the same understanding an experienced instructor has
+              when they glance at a board and immediately see the problem.
+            </p>
+            <p>
+              The instructor has already built the correct version of that circuit once, inside the same
+              program. The system saved it, not as a picture, but as a record of which connections the correct
+              circuit has. When a student builds their version, the system compares the two records and finds
+              the difference.
+            </p>
+            <p>
+              If there is a difference, the system does not say <em>wrong</em> and it does not give a score.
+              It highlights the exact row on the board where the problem is, and it says something like this:
+            </p>
+
+            <div class="diagnosis">
+              <div class="tag">
+                <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                  <path
+                    d="M6 1.5 11 10.5H1z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.3"
+                    stroke-linejoin="round"
+                  />
+                  <path d="M6 5v2.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                  <circle cx="6" cy="8.9" r="0.65" fill="currentColor" />
+                </svg>
+                Broken connection
+              </div>
+              <p>
+                <strong>The LED never reaches ground.</strong> The jumper wire is on the far side of the
+                centre channel, so row 14 and row 15 are two separate connections rather than one.
+              </p>
+              <p class="ask">Which side of the channel does that wire need to be on?</p>
+            </div>
+
+            <p>
+              That question is the point of the whole system. The student is told exactly where to look, and
+              then asked to work out the fix themselves. If they cannot, they can ask for a stronger hint, and
+              then for the answer outright — but each step is a deliberate choice, and the system records how
+              far they had to go.
+            </p>
+
+            <h3>Why the comparison is the clever part</h3>
+            <p>
+              There is one problem that makes this harder than it sounds, and solving it is the technical
+              contribution of this project.
+            </p>
+            <p>
+              <strong>There is no single correct-looking circuit.</strong> The same circuit can be built on
+              row 5 or row 30, with the components arranged differently, and be completely and equally
+              correct. Two correct boards can look nothing alike.
+            </p>
+            <p>
+              A system that compared pictures would fail immediately — it would mark a perfectly good circuit
+              as wrong simply because the student built it further down the board. Students would stop
+              trusting it within one session, and a tool nobody trusts is worse than no tool at all.
+            </p>
+            <p>
+              This system compares <strong>connections</strong>, not appearances. It asks &ldquo;is this
+              component's leg connected to the same things it should be connected to?&rdquo; rather than
+              &ldquo;is it in the same place?&rdquo; Two circuits built in completely different positions on
+              the board come out identical, because electrically they <em>are</em>
+              identical.
+            </p>
+            <div class="note">
+              That is why the system can be confident enough to point at a specific wire and say
+              <em>that one</em> — and it is why the project sets itself a strict measurable target: when a
+              student builds the circuit correctly but differently, the system must report no problems at all,
+              at least 95% of the time.
+            </div>
+
+            <h3>What the instructor gets</h3>
+            <p>
+              The instructor sets up an exercise once and lets it run. They build the correct circuit
+              themselves — no writing of specifications, no lists of rules, just building it the way they
+              would on their own bench. The system remembers it and uses it to check every student in the
+              class.
+            </p>
+            <p>
+              While students work, the system handles the ordinary mistakes that account for most raised
+              hands: the missing wire, the backwards component, the connection in the wrong row. That leaves
+              the instructor free to spend their limited time on the students who are genuinely stuck on the
+              concept rather than on the wiring.
+            </p>
+            <p>
+              Afterwards, the instructor gets a summary of the whole class: which mistakes came up most often,
+              how long students took to find their own errors, how many worked it out without asking for help,
+              and which students are struggling and have not said so. That summary can be exported to a
+              spreadsheet.
+            </p>
+            <p>
+              None of this replaces the instructor's judgement. The system diagnoses; the grade stays with the
+              teacher.
+            </p>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="marker"><b>03</b>Features</div>
+          <div class="body">
+            <h3>For the student</h3>
+            <div class="tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Feature</th>
+                    <th>What it means in practice</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Realistic 3D practice board</strong></td>
+                    <td>
+                      A full-size breadboard that can be rotated and zoomed, with components dragged into
+                      place. It behaves like the real thing, including refusing impossible placements.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Nothing is graded while you build</strong></td>
+                    <td>
+                      The system stays quiet while the student is still working. It speaks up only once a
+                      section is finished, or once a wire has been left dangling for several seconds. It is
+                      not designed to nag.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Plain-language explanations</strong></td>
+                    <td>
+                      Mistakes are described in the language of the board — which wire, which row, which
+                      component — never as a percentage or a mark.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Guiding questions before answers</strong></td>
+                    <td>
+                      The first response to a mistake is a question, not a correction. A stronger hint and
+                      then the explicit answer are available on request, one deliberate step at a time.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Visual pointing</strong></td>
+                    <td>
+                      The row containing the mistake glows on the board while the rest dims, and a button
+                      swings the camera round to show it.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Free practice</strong></td>
+                    <td>
+                      Students can practise outside laboratory hours, as often as they like. Nothing is
+                      consumed and nothing can be damaged.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Work is saved automatically</strong></td>
+                    <td>
+                      Closing the browser mid-build loses nothing. Reopening the exercise restores the board
+                      exactly as it was left.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Works without internet</strong></td>
+                    <td>
+                      Once an exercise has been opened once, it can be completed with the connection down.
+                      Everything syncs when the network returns.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>English and Filipino</strong></td>
+                    <td>
+                      The whole interface is available in both. Technical words such as <em>resistor</em> and
+                      <em>breadboard</em> stay in English on purpose, because that is how the subject is
+                      taught and examined.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Built for different eyes and hands</strong></td>
+                    <td>
+                      Larger text, higher contrast, and reduced motion for anyone who finds animation
+                      uncomfortable. Everything works by keyboard alone. Crucially, no problem is ever shown
+                      by colour alone — every warning carries a symbol and words as well, so colour-blind
+                      students, roughly one man in twelve, are never left guessing.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Installable like an app</strong></td>
+                    <td>
+                      It can be added to a phone or laptop home screen and opened like any other application.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>For the instructor</h3>
+            <div class="tablewrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Feature</th>
+                    <th>What it means in practice</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Class setup</strong></td>
+                    <td>
+                      Create a class, and the system generates a six-character code. Students type that code
+                      once to join.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Class list management</strong></td>
+                    <td>See who has joined, remove a student, or issue a new code.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Exercise authoring</strong></td>
+                    <td>
+                      Set the title, the objective, the difficulty, the list of parts allowed, and an optional
+                      schematic diagram. Exercises stay hidden from students until deliberately published.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Build the answer once</strong></td>
+                    <td>
+                      The correct circuit is defined by building it, not by describing it. The system reads
+                      it, shows the instructor what it understood, and saves it as the reference for that
+                      exercise.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Validation on saving</strong></td>
+                    <td>
+                      If the reference circuit itself has a problem — a loose connection, a short, an unused
+                      component — the system refuses to save it and says why. It will not let a broken answer
+                      key be published.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Class analytics</strong></td>
+                    <td>
+                      The most common mistakes, the average time students take to find their own errors, how
+                      many resolved a problem without asking for help, and a list of students who appear to be
+                      struggling.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Individual review</strong></td>
+                    <td>
+                      A timeline of a single student's attempt, showing what they built, what went wrong, and
+                      what they did about it.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Spreadsheet export</strong></td>
+                    <td>All of it exports to a standard spreadsheet file.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>Protecting the answer key</h3>
+            <p>
+              There is one thing that would break this system completely: if a student could get hold of the
+              instructor's reference circuit, every exercise would become a copying task rather than a
+              learning one.
+            </p>
+            <p>
+              This was treated as the central security concern of the project rather than an afterthought, and
+              it is guarded in four independent ways. The reference circuit is filtered out of the information
+              sent to students at four separate points, each one an independent check, so that a mistake at
+              any single point is caught by the others. An automated test runs on every change to the software
+              and inspects the actual program delivered to student browsers, confirming that no trace of the
+              answer key is present.
+              <strong>That test has already caught two genuine leaks during development</strong>, before
+              either one could reach a student.
+            </p>
+            <p>Related protections:</p>
+            <ul>
+              <li>
+                Nobody can create a teacher account by simply choosing &ldquo;teacher&rdquo; when signing up.
+                A teacher account requires a code issued by the department, and if no code has been
+                configured, no teacher account can be created at all. Without this, any student could see
+                every answer key just by ticking the wrong box at registration.
+              </li>
+              <li>One student cannot open another student's work.</li>
+              <li>
+                Passwords are never stored in a readable form, and no login information is ever kept anywhere
+                a malicious web page could reach it.
+              </li>
+              <li>Repeated failed sign-in attempts are slowed down automatically.</li>
+              <li>Password reset links can only be used once, and they expire.</li>
+            </ul>
+
+            <h3>Proving that it works</h3>
+            <p>
+              A capstone project should not merely claim its system is accurate. This one is built to
+              demonstrate it.
+            </p>
+            <p>
+              A test collection of <strong>150 deliberately broken circuits</strong> has been prepared, each
+              labelled with the mistake it actually contains. The system is run against all 150 automatically,
+              and its diagnosis is compared with the known answer. It reports how often it pointed at the
+              right place, how often it named the right kind of mistake, and how often it complained about a
+              circuit that was in fact correct.
+            </p>
+            <p>
+              Twenty of those cases are correct circuits deliberately built in unusual positions. The system
+              must find nothing wrong with any of them. These tests run automatically every time the software
+              changes, so accuracy is re-measured continuously and cannot quietly get worse.
+            </p>
+
+            <div class="targets">
+              <div><span>Points at the right place</span><b>at least 90%</b></div>
+              <div><span>Names the right kind of mistake</span><b>at least 85%</b></div>
+              <div><span>Wrongly flags a correct circuit</span><b>no more than 5%</b></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="marker"><b>04</b>Target user</div>
+          <div class="body">
+            <h3>The electronics student &mdash; the main user</h3>
+            <p>
+              A second- or third-year college student taking an electronics laboratory course, usually 18 to
+              21 years old, using a school computer or an ordinary laptop. They are comfortable with a web
+              browser and do not need to know anything about programming.
+            </p>
+            <p>
+              Right now, their laboratory experience has a gap in it. They are graded on whether the circuit
+              works, but they are never actually taught the skill that decides whether it works: methodically
+              finding the one connection that is wrong. That skill is learned by trying, failing, being told
+              precisely what went wrong, and trying again — a cycle the current laboratory setup makes almost
+              impossible, because the board says nothing and the instructor is busy.
+            </p>
+            <p>
+              This system gives them that cycle. It can be repeated as many times as they want, outside class
+              hours, without waiting for anyone and without embarrassment. And because the system asks a
+              question before it gives an answer, the student is still the one doing the finding.
+            </p>
+            <p>
+              The design also assumes some realities of their situation: campus internet that drops out,
+              shared laboratory computers that reset overnight, a bilingual classroom, and the ordinary fact
+              that some of them cannot reliably distinguish red from green.
+            </p>
+
+            <h3>The laboratory instructor &mdash; the second main user</h3>
+            <p>
+              A faculty member responsible for one or more laboratory sections of thirty to forty students, in
+              sessions of about two hours.
+            </p>
+            <p>
+              Their difficulty is arithmetic rather than pedagogical. Forty boards cannot be inspected by one
+              person in two hours. Most of a session is spent queuing, and most of the instructor's attention
+              goes to mistakes that are trivial to spot and tedious to keep spotting.
+            </p>
+            <p>
+              This system takes the repetitive half of that work. It answers the routine questions immediately
+              and consistently, so the instructor's time goes to the students who are stuck on the idea rather
+              than the wiring. It also tells them things they currently have no way of knowing: which mistakes
+              this particular class keeps making, which exercise is harder than intended, and which quiet
+              student has been stuck for forty minutes without saying so.
+            </p>
+
+            <h3>The department &mdash; the indirect beneficiary</h3>
+            <p>
+              A laboratory section costs money in components, and components get damaged, lost and used up. A
+              practice board that lives in a browser costs nothing per additional student, cannot be broken,
+              and is available at any hour. It does not replace the physical laboratory — students still need
+              to handle real hardware — but it lets them arrive at the real bench already knowing what they
+              are doing.
+            </p>
+
+            <h3>What this system deliberately does not do</h3>
+            <p>Worth stating clearly, so that expectations are accurate.</p>
+            <ul>
+              <li>
+                It is <strong>not</strong> a professional electronics design program. It is a teaching board
+                for classroom circuits, and nothing more.
+              </li>
+              <li>
+                It handles <strong>steady, direct-current circuits only</strong> — the kind used in
+                introductory laboratory work. Circuits involving alternating current or rapidly changing
+                signals are outside its scope, and that limit is a deliberate decision rather than an
+                omission.
+              </li>
+              <li>
+                It does <strong>not</strong> assign grades. It explains mistakes; the marking stays with the
+                instructor.
+              </li>
+              <li>
+                It does <strong>not</strong> replace the physical laboratory. Students still need to touch
+                real components. This is preparation and practice, not a substitute.
+              </li>
+              <li>
+                It does <strong>not</strong> use artificial intelligence to work out what is wrong. Every
+                diagnosis comes from fixed, tested electrical rules. This matters for the research: the system
+                gives the same answer for the same circuit every single time, which is what makes its accuracy
+                measurable and the results of this study repeatable by anyone who checks them.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="marker"><b>App. A</b>Status</div>
+          <div class="body">
+            <h2>Current status of the project</h2>
+            <p>
+              Stated plainly, so that no part of this document is read as a claim about something that is not
+              yet built.
+            </p>
+
+            <h4>Built and working today</h4>
+            <p>
+              The complete student-facing application exists as a working program: account creation with email
+              confirmation, secure sign-in, password reset, first-time setup, joining a class by code, the
+              student dashboard with the full exercise library, the exercise briefing screen, the settings
+              screen with its language and accessibility options, and the full visual design system underneath
+              all of it. Both languages are complete. The protections around the answer key and around teacher
+              accounts are in place and independently tested.
+            </p>
+
+            <h4>Verified by automated testing</h4>
+            <p>
+              The program is checked by <strong>128 automated tests</strong> running against a real database,
+              plus <strong>23 tests driving a real web browser</strong> from account creation through to
+              signing out. All of them pass. These are not manual checks — they run automatically and would
+              fail loudly if anything broke.
+            </p>
+
+            <h4>Still to be built</h4>
+            <p>
+              The 3D building workspace itself, the circuit reading and comparison engine, Learn Mode for
+              instructors, the class analytics, and the offline capability. These are the remaining planned
+              phases of the project, and each has a written specification and a defined completion checklist.
+            </p>
+
+            <h4>Waiting on accounts rather than on work</h4>
+            <p>
+              Three items are finished as code but cannot be ticked off yet because they need online accounts
+              that have not been set up — the hosted database, the web hosting service and the code
+              repository. None of them requires further development.
+            </p>
+          </div>
+        </section>
+
+        <section class="s">
+          <div class="marker"><b>App. B</b>Method</div>
+          <div class="body">
+            <h2>How the project will be judged</h2>
+            <p>Two separate measurements, taken independently, and a third that asks whether it helps.</p>
+            <p>
+              <strong>Does it diagnose correctly?</strong> Measured automatically against the 150 prepared
+              test circuits, and reported as three percentages: how often it pointed at the right place, how
+              often it named the right kind of mistake, and how often it wrongly flagged a correct circuit.
+            </p>
+            <p>
+              <strong>Is it a good product?</strong> Measured using <strong>ISO/IEC 25010</strong>, an
+              international standard for judging software quality across five areas — whether it does what it
+              should, whether it performs well, whether people can actually use it, whether it is dependable,
+              and whether it runs on the machines it needs to. The target is an average rating of
+              <strong>4.20 out of 5</strong>.
+            </p>
+            <p>
+              <strong>Does it actually help?</strong> A trial with at least 30 students runs the same
+              exercises two ways: one group with the explanations turned on, and one group told only whether
+              their circuit passed or failed. Comparing how long each group takes to find their own mistakes
+              is what shows whether the system teaches, rather than merely functions.
+            </p>
+          </div>
+        </section>
+      </article>
+
+      <footer class="end">
+        Smart Breadboard Diagnostic Trainer &middot; capstone system documentation, version 1.0 &middot;
+        September 2026. Source documents:
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.9em"
+          >docs/system-documentation-technical.md</span
+        >
+        and
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.9em"
+          >docs/system-documentation-general.md</span
+        >.
+      </footer>
+    </main>
+
+    <script>
+      ;(function () {
+        var buttons = document.querySelectorAll('.switch button')
+        var docs = document.querySelectorAll('.doc')
+
+        buttons.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var target = btn.getAttribute('data-show')
+            docs.forEach(function (d) {
+              d.hidden = d.id !== target
+            })
+            buttons.forEach(function (b) {
+              b.setAttribute('aria-pressed', String(b === btn))
+            })
+            window.scrollTo({ top: 0, behavior: 'auto' })
+          })
+        })
+
+        document.getElementById('print').addEventListener('click', function () {
+          window.print()
+        })
+      })()
+    </script>
+  </body>
+</html>

@@ -1,0 +1,159 @@
+/**
+ * Design tokens — the single source of colour, shape and elevation.
+ *
+ * ---------------------------------------------------------------------------
+ * THE LOOK: a working instrument for a teaching lab, not a product launch page
+ *
+ * Light by default, on a faintly cool white. One blue carries every action. The
+ * five semantic states use the colours a student already knows from every other
+ * tool they have ever used — green means right, red means wrong — because a
+ * diagnostic trainer is the wrong place to teach someone a private colour
+ * vocabulary before it can teach them anything about circuits.
+ *
+ * Dark is a full peer and stays available in Settings: a lab at 7pm with the
+ * overheads off is a real place. It is a variable swap, not a second set of
+ * classes.
+ * ---------------------------------------------------------------------------
+ *
+ * Nothing outside this file may declare a literal colour.
+ *
+ * Accessibility contract: state is never carried by colour alone. `StatusBadge`
+ * and `Callout` hard-wire a distinct icon shape per tone, `Input` shows an icon
+ * with its error, and the palette backs that up rather than relying on it — the
+ * five states are separated on hue *and* lightness, so they stay distinguishable
+ * in greyscale and under dichromacy.
+ */
+
+@layer base {
+  :root {
+    /* Grounds -------------------------------------------------------------
+       900 is the page, 800 the surface that sits on it, 700 a raised or hovered
+       step, 600 a filled edge. White surfaces on a faintly grey page is what
+       gives depth here — there is no texture and almost no shadow. */
+    --bg-900: 210 20% 98%;
+    --bg-800: 0 0% 100%;
+    --bg-700: 210 20% 96%;
+    --bg-600: 214 16% 91%;
+
+    /* Rules ---------------------------------------------------------------
+       Solid greys rather than an alpha black. On white, a 10%-alpha rule picks
+       up whatever is behind it and drifts; a named grey is the same line on
+       every surface. */
+    --line: 214 20% 89%;
+    --line-strong: 214 16% 78%;
+
+    /* Ink ------------------------------------------------------------------
+       Near-black with a blue cast, so body copy sits in the same family as the
+       accent instead of reading as a separate, warmer system. */
+    --text-primary: 217 33% 14%;
+    --text-secondary: 215 16% 38%;
+    --text-tertiary: 215 14% 50%;
+    --text-inverse: 0 0% 100%;
+
+    /* Accent — one blue, for every primary action and every active state. */
+    --accent: 221 83% 51%;
+    --accent-ink: 224 76% 42%;
+    --accent-contrast: 0 0% 100%;
+
+    /* Semantic states ------------------------------------------------------
+       Conventional hues, and separated on lightness as well: ok L30 · warn L38
+       · fault L45 · info L45. `-surface` is the tint a badge or callout sits
+       on, `-line` its border, `-ink` its text — every pairing clears 4.5:1. */
+    --ok: 142 71% 30%;
+    --ok-surface: 140 60% 96%;
+    --ok-line: 142 42% 76%;
+    --ok-ink: 143 72% 24%;
+
+    --warn: 30 95% 38%;
+    --warn-surface: 40 92% 95%;
+    --warn-line: 36 78% 74%;
+    --warn-ink: 26 88% 29%;
+
+    --fault: 0 72% 45%;
+    --fault-surface: 0 86% 97%;
+    --fault-line: 0 68% 85%;
+    --fault-ink: 0 70% 38%;
+
+    --info: 217 85% 45%;
+    --info-surface: 214 95% 96%;
+    --info-line: 215 75% 82%;
+    --info-ink: 220 80% 38%;
+
+    --neutral: 215 14% 45%;
+    --neutral-surface: 210 20% 96%;
+    --neutral-line: 214 16% 86%;
+    --neutral-ink: 217 25% 30%;
+
+    --ring: 221 83% 51%;
+
+    /* Shape ----------------------------------------------------------------
+       An ordinary, quiet scale. Controls take `md` (8px) and surfaces take
+       `card` (12px); `pill` is reserved for the few things that genuinely are
+       pills — badges, chips, the switch track, an avatar. */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
+    --radius-card: 12px;
+    --radius-panel: 16px;
+
+    /* Elevation — small and cool. A card lifts a hair off the page; a dialog
+       genuinely floats. Anything more reads as decoration. */
+    --shadow-sm: 0 1px 2px 0 hsl(217 33% 17% / 0.05);
+    --shadow-md: 0 1px 3px 0 hsl(217 33% 17% / 0.08), 0 4px 12px -2px hsl(217 33% 17% / 0.06);
+    --shadow-lg: 0 8px 24px -6px hsl(217 33% 17% / 0.12), 0 18px 48px -12px hsl(217 33% 17% / 0.14);
+  }
+
+  .dark {
+    /* A blue-black rather than a neutral one, so the same accent sits on it
+       without looking pasted on. */
+    --bg-900: 222 30% 9%;
+    --bg-800: 222 26% 12%;
+    --bg-700: 220 22% 17%;
+    --bg-600: 220 18% 26%;
+    --line: 220 18% 22%;
+    --line-strong: 220 14% 34%;
+
+    --text-primary: 210 30% 96%;
+    --text-secondary: 214 18% 74%;
+    --text-tertiary: 215 16% 58%;
+    --text-inverse: 222 30% 9%;
+
+    /* Lifted and desaturated a step: the light theme's blue is unreadable
+       against a dark ground, and a brighter one would halo. */
+    --accent: 214 95% 68%;
+    --accent-ink: 213 94% 78%;
+    --accent-contrast: 222 47% 11%;
+
+    --ok: 142 65% 55%;
+    --ok-surface: 145 45% 14%;
+    --ok-line: 143 35% 28%;
+    --ok-ink: 141 70% 72%;
+
+    --warn: 38 92% 60%;
+    --warn-surface: 32 45% 15%;
+    --warn-line: 35 40% 30%;
+    --warn-ink: 40 90% 72%;
+
+    --fault: 0 84% 66%;
+    --fault-surface: 0 40% 16%;
+    --fault-line: 0 38% 32%;
+    --fault-ink: 0 90% 78%;
+
+    --info: 213 92% 70%;
+    --info-surface: 216 45% 17%;
+    --info-line: 215 40% 33%;
+    --info-ink: 212 92% 78%;
+
+    --neutral: 215 16% 62%;
+    --neutral-surface: 220 20% 16%;
+    --neutral-line: 220 16% 28%;
+    --neutral-ink: 214 22% 80%;
+
+    --ring: 214 95% 68%;
+
+    --shadow-sm: 0 1px 2px 0 hsl(222 47% 4% / 0.4);
+    --shadow-md: 0 1px 3px 0 hsl(222 47% 4% / 0.5), 0 4px 12px -2px hsl(222 47% 4% / 0.45);
+    --shadow-lg: 0 8px 24px -6px hsl(222 47% 4% / 0.55), 0 18px 48px -12px hsl(222 47% 4% / 0.6);
+  }
+}

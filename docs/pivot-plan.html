@@ -1,0 +1,1279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lighting Circuits Pivot Plan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <style>
+      /* Palette lifted from the product's own src/styles/tokens.css. */
+      :root {
+        --bg-900: 210 20% 98%;
+        --bg-800: 0 0% 100%;
+        --bg-700: 210 20% 96%;
+        --line: 214 20% 89%;
+        --line-strong: 214 16% 78%;
+        --ink: 217 33% 14%;
+        --ink-2: 215 16% 38%;
+        --ink-3: 215 14% 50%;
+        --accent: 221 83% 51%;
+        --accent-ink: 224 76% 42%;
+        --accent-surface: 214 95% 96%;
+        --ok: 142 71% 30%;
+        --ok-surface: 140 60% 96%;
+        --ok-line: 142 42% 76%;
+        --warn: 30 95% 38%;
+        --warn-surface: 40 92% 95%;
+        --warn-line: 36 78% 74%;
+        --fault: 0 72% 45%;
+        --fault-surface: 0 86% 97%;
+        --fault-line: 0 68% 85%;
+        --info-line: 215 75% 82%;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --bg-900: 222 30% 9%;
+          --bg-800: 222 26% 12%;
+          --bg-700: 220 22% 17%;
+          --line: 220 18% 22%;
+          --line-strong: 220 14% 34%;
+          --ink: 210 30% 96%;
+          --ink-2: 214 18% 74%;
+          --ink-3: 215 16% 58%;
+          --accent: 214 95% 68%;
+          --accent-ink: 213 94% 78%;
+          --accent-surface: 216 45% 17%;
+          --ok: 142 65% 55%;
+          --ok-surface: 145 45% 14%;
+          --ok-line: 143 35% 28%;
+          --warn: 38 92% 60%;
+          --warn-surface: 32 45% 15%;
+          --warn-line: 35 40% 30%;
+          --fault: 0 84% 66%;
+          --fault-surface: 0 40% 16%;
+          --fault-line: 0 38% 32%;
+          --info-line: 215 40% 33%;
+        }
+      }
+      :root[data-theme='dark'] {
+        --bg-900: 222 30% 9%;
+        --bg-800: 222 26% 12%;
+        --bg-700: 220 22% 17%;
+        --line: 220 18% 22%;
+        --line-strong: 220 14% 34%;
+        --ink: 210 30% 96%;
+        --ink-2: 214 18% 74%;
+        --ink-3: 215 16% 58%;
+        --accent: 214 95% 68%;
+        --accent-ink: 213 94% 78%;
+        --accent-surface: 216 45% 17%;
+        --ok: 142 65% 55%;
+        --ok-surface: 145 45% 14%;
+        --ok-line: 143 35% 28%;
+        --warn: 38 92% 60%;
+        --warn-surface: 32 45% 15%;
+        --warn-line: 35 40% 30%;
+        --fault: 0 84% 66%;
+        --fault-surface: 0 40% 16%;
+        --fault-line: 0 38% 32%;
+        --info-line: 215 40% 33%;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: hsl(var(--bg-900));
+        color: hsl(var(--ink));
+        font-family: 'Inter', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .page {
+        max-width: 54rem;
+        margin: 0 auto;
+        padding: 2.5rem clamp(1rem, 5vw, 3rem) 4rem;
+      }
+
+      header.cover {
+        margin-bottom: 1.5rem;
+      }
+      .eyebrow {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: hsl(var(--accent-ink));
+        margin-bottom: 0.5rem;
+      }
+      h1 {
+        font-size: clamp(1.7rem, 4vw, 2.1rem);
+        line-height: 1.15;
+        letter-spacing: -0.025em;
+        margin: 0 0 0.5rem;
+      }
+      .lede {
+        font-size: 1.0625rem;
+        color: hsl(var(--ink-2));
+        margin: 0 0 1rem;
+        max-width: 42rem;
+      }
+      .meta {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.15rem 1.1rem;
+        font-size: 0.85rem;
+        margin: 0;
+      }
+      .meta dt {
+        color: hsl(var(--ink-3));
+      }
+      .meta dd {
+        margin: 0;
+      }
+
+      section {
+        padding-top: 1.6rem;
+      }
+      h2 {
+        font-size: 1.2rem;
+        letter-spacing: -0.015em;
+        margin: 0 0 0.55rem;
+        padding-bottom: 0.32rem;
+        border-bottom: 2px solid hsl(var(--line-strong));
+      }
+      h2 .num {
+        color: hsl(var(--ink-3));
+        font-weight: 500;
+        margin-right: 0.45rem;
+      }
+      h3 {
+        font-size: 0.95rem;
+        margin: 1.1rem 0 0.35rem;
+      }
+      p {
+        margin: 0 0 0.65rem;
+        max-width: 42rem;
+      }
+      ul,
+      ol {
+        margin: 0 0 0.65rem;
+        padding-left: 1.2rem;
+        max-width: 42rem;
+      }
+      li {
+        margin-bottom: 0.22rem;
+      }
+      strong {
+        font-weight: 600;
+      }
+      code {
+        font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+        font-size: 0.85em;
+        background: hsl(var(--bg-700));
+        border: 1px solid hsl(var(--line));
+        border-radius: 4px;
+        padding: 0.06em 0.3em;
+      }
+
+      .pick {
+        border: 2px solid hsl(var(--accent));
+        background: hsl(var(--accent-surface));
+        border-radius: 10px;
+        padding: 1rem 1.15rem;
+        margin: 0.9rem 0 1.1rem;
+        max-width: 42rem;
+      }
+      .pick .tag {
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: hsl(var(--accent-ink));
+        margin-bottom: 0.35rem;
+      }
+      .pick h3 {
+        margin: 0 0 0.25rem;
+        font-size: 1.15rem;
+        letter-spacing: -0.015em;
+      }
+      .pick p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: hsl(var(--ink-2));
+      }
+
+      .note {
+        border: 1px solid hsl(var(--info-line));
+        background: hsl(var(--accent-surface));
+        border-radius: 8px;
+        padding: 0.7rem 0.95rem;
+        margin: 0.9rem 0;
+        max-width: 42rem;
+      }
+      .note.warn {
+        border-color: hsl(var(--warn-line));
+        background: hsl(var(--warn-surface));
+      }
+      .note.ok {
+        border-color: hsl(var(--ok-line));
+        background: hsl(var(--ok-surface));
+      }
+      .note.rule {
+        border-color: hsl(var(--fault-line));
+        background: hsl(var(--fault-surface));
+      }
+      .note p:last-child {
+        margin-bottom: 0;
+      }
+      .note b {
+        display: block;
+        margin-bottom: 0.18rem;
+      }
+
+      blockquote {
+        margin: 0.9rem 0;
+        padding: 0.15rem 0 0.15rem 1rem;
+        border-left: 3px solid hsl(var(--accent));
+        max-width: 42rem;
+      }
+      blockquote p {
+        margin: 0;
+      }
+
+      .tablewrap {
+        overflow-x: auto;
+        margin: 0.85rem 0;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.875rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.4rem 0.6rem;
+        border-bottom: 1px solid hsl(var(--line));
+        vertical-align: top;
+      }
+      thead th {
+        background: hsl(var(--bg-700));
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: hsl(var(--ink-2));
+        border-bottom: 1px solid hsl(var(--line-strong));
+      }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      td.k {
+        font-weight: 600;
+      }
+      td.num,
+      th.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      figure {
+        margin: 1rem 0 1.2rem;
+      }
+      figure svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        background: hsl(var(--bg-800));
+        border: 1px solid hsl(var(--line));
+        border-radius: 10px;
+        padding: 0.4rem;
+      }
+      figcaption {
+        font-size: 0.85rem;
+        color: hsl(var(--ink-2));
+        margin-top: 0.5rem;
+        padding-left: 0.75rem;
+        border-left: 3px solid hsl(var(--accent));
+        max-width: 42rem;
+      }
+
+      @media print {
+        @page {
+          margin: 12mm 14mm;
+        }
+        body {
+          background: #fff;
+          color: #101828;
+          font-size: 9.5pt;
+          line-height: 1.38;
+        }
+        .page {
+          max-width: none;
+          padding: 0;
+        }
+        h1 {
+          font-size: 19pt;
+        }
+        .lede {
+          font-size: 10.5pt;
+        }
+        h2 {
+          font-size: 12.5pt;
+        }
+        section {
+          padding-top: 0.8rem;
+        }
+        p {
+          margin-bottom: 0.45rem;
+        }
+        h2,
+        h3 {
+          break-after: avoid-page;
+        }
+        .note,
+        .tablewrap,
+        figure,
+        .pick,
+        blockquote {
+          break-inside: avoid-page;
+        }
+        .note {
+          padding: 0.5rem 0.75rem;
+          margin: 0.6rem 0;
+        }
+        figure {
+          margin: 0.7rem 0 0.9rem;
+        }
+        figure svg {
+          border-color: #d0d5dd;
+          background: #fff;
+          max-width: 92%;
+          margin: 0 auto;
+        }
+        figcaption {
+          font-size: 8.5pt;
+        }
+        table {
+          font-size: 8pt;
+        }
+        thead th {
+          background: #f2f4f7;
+        }
+        .note {
+          background: #f8fafc;
+          border-color: #c8d8f7;
+        }
+        .note.warn {
+          background: #fffaf0;
+          border-color: #f0c88a;
+        }
+        .note.ok {
+          background: #f4fbf6;
+          border-color: #b3ddc0;
+        }
+        .note.rule {
+          background: #fff5f5;
+          border-color: #f2b8b8;
+        }
+        .pick {
+          background: #f2f6ff;
+          border-color: #1d4ed8;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="cover">
+        <div class="eyebrow">Proposal &middot; For team decision</div>
+        <h1>Pivot Plan: From Breadboard to Lighting Circuits</h1>
+        <p class="lede">
+          The client does not offer a breadboard trainer. This is how the same system, the same flow and most
+          of the same code move to a TESDA competency the client actually teaches.
+        </p>
+        <dl class="meta">
+          <dt>Replaces</dt>
+          <dd>The domain half of <code>build-plan.md</code>. Parts A and C stand as written</dd>
+          <dt>Status</dt>
+          <dd>Proposal, to accept or reject before any code moves</dd>
+          <dt>Date</dt>
+          <dd>18 September 2026</dd>
+        </dl>
+      </header>
+
+      <section>
+        <h2><span class="num">1</span>The topic we should take</h2>
+
+        <div class="pick">
+          <span class="tag">Recommended topic</span>
+          <h3>Install lighting fixtures and switch controls</h3>
+          <p>
+            TESDA EIM NC II &middot;
+            <em
+              >Install Electrical Protective Devices for Distribution, Power, Lighting, Auxiliary, Lightning
+              Protection and Grounding Systems</em
+            >
+            &middot;
+            <strong>Learning Outcome 3</strong>
+          </p>
+        </div>
+
+        <p>One learning outcome, three exercises, one competency. Not the whole module.</p>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 6%">#</th>
+                <th style="width: 34%">Exercise</th>
+                <th style="width: 30%">Source in their material</th>
+                <th>Devices</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="num">1</td>
+                <td class="k">One lamp on a single-pole switch</td>
+                <td>Information Sheet 2.3-1</td>
+                <td>breaker, switch, lamp</td>
+              </tr>
+              <tr>
+                <td class="num">2</td>
+                <td class="k">Two lamps on a duplex switch</td>
+                <td><strong>Job Sheet 2.3-1</strong></td>
+                <td>breaker, 2-gang switch, 2 lamps</td>
+              </tr>
+              <tr>
+                <td class="num">3</td>
+                <td class="k">One lamp on two three-way switches</td>
+                <td>Information Sheet 2.3-1, three-way pages</td>
+                <td>breaker, 2&times; 3-way switch, lamp</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Exercise 2 is their own culminating assessment for this outcome. Exercise 3 is the one students
+          cannot debug without help, which is the entire reason our system exists.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">2</span>Why this topic and not another</h2>
+
+        <p>
+          We looked at every practical sheet in the module. This one is the closest structural match to what
+          we have already built, on five counts.
+        </p>
+
+        <ul>
+          <li>
+            <strong>Same size.</strong> Three to eight components per exercise, exactly like a breadboard
+            circuit. Grounding and lightning protection are whole-building problems with no natural boundary;
+            a lighting circuit has a beginning and an end.
+          </li>
+          <li>
+            <strong>Same mechanic.</strong> The student joins terminals with conductors. We already know how
+            to model a thing pushed into a connection point and turn it into a graph.
+          </li>
+          <li>
+            <strong>Same mathematics.</strong> Netlist extraction and graph comparison carry over untouched,
+            so Phases 11, 12 and 14 survive the pivot with no algorithmic change.
+          </li>
+          <li>
+            <strong>Faults are localizable.</strong> Every fault lands on a named terminal in a named box, the
+            way breadboard faults landed on a row.
+          </li>
+          <li><strong>It preserves our headline metric, and sharpens it.</strong> See section 6.</li>
+        </ul>
+
+        <p>
+          By contrast, circuit breakers and panel boards (Learning Outcomes 1 and 2) are mostly identification
+          and selection knowledge, which is a quiz rather than a diagnostic engine. Grounding and lightning
+          protection have too few discrete, student-committed faults to build a 150-case corpus from.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">3</span>What replaces the breadboard</h2>
+
+        <p>
+          Their material names it for us. Under <strong>Conditions</strong> for Learning Outcome 3 it lists
+          <em>"Wiring booth / Simulated workplace"</em>. A TESDA wiring booth is a standard frame with fixed
+          mounting positions. That fixed, known layout is what made the breadboard tractable, and it is what
+          makes this tractable.
+        </p>
+
+        <div class="note warn">
+          <b>Assumed scope: wiring only</b>
+          <p>
+            Boxes, conduit and fixture positions are placed by the exercise. The student pulls conductors and
+            lands them on terminals. Every fault in section 5 is a wiring fault, so this targets all of the
+            pedagogy without taking on box mounting and conduit bending. Flag this if the team disagrees. It
+            is the one assumption that changes the schedule.
+          </p>
+        </div>
+
+        <h3>Addressing</h3>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 44%">Breadboard</th>
+                <th>Lighting booth</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>{ col: 1-63, row: 'A'-'J', half }</code></td>
+                <td><code>{ boxId, deviceId, terminalId }</code></td>
+              </tr>
+              <tr>
+                <td>Hole</td>
+                <td>Terminal, and terminals are <strong>named</strong>, not spatial</td>
+              </tr>
+              <tr>
+                <td>Five-hole strip collapses to one node</td>
+                <td>Wire nut collapses its conductors to one node</td>
+              </tr>
+              <tr>
+                <td>Component spans two holes</td>
+                <td>Conductor spans two terminals</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Named terminals are strictly easier than a coordinate grid. There is no raycasting, no nearest-hole
+          maths and no span validation, so Phase 10 gets simpler.
+        </p>
+
+        <h3>Device model</h3>
+        <p>
+          Each device declares its terminals and its internal connectivity, which may depend on state. This
+          small table is the whole domain; adding a device later is one row.
+        </p>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 22%">Device</th>
+                <th style="width: 42%">Terminals</th>
+                <th>Internal connection</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="k">Breaker</td>
+                <td><code>bus</code>, <code>load</code></td>
+                <td>closed when on</td>
+              </tr>
+              <tr>
+                <td class="k">Single-pole switch</td>
+                <td><code>line</code>, <code>load</code></td>
+                <td>closed when up</td>
+              </tr>
+              <tr>
+                <td class="k">Three-way switch</td>
+                <td><code>common</code>, <code>traveler1</code>, <code>traveler2</code></td>
+                <td><code>common</code> to exactly one traveler</td>
+              </tr>
+              <tr>
+                <td class="k">Duplex switch</td>
+                <td>two independent single-pole sets</td>
+                <td>per gang</td>
+              </tr>
+              <tr>
+                <td class="k">Receptacle</td>
+                <td><code>line</code>, <code>neutral</code>, <code>ground</code></td>
+                <td>always, to its blades</td>
+              </tr>
+              <tr>
+                <td class="k">GFCI</td>
+                <td><code>line-in</code>, <code>load-out</code>, neutrals, <code>ground</code></td>
+                <td>trips on imbalance</td>
+              </tr>
+              <tr>
+                <td class="k">Lamp</td>
+                <td><code>t1</code>, <code>t2</code></td>
+                <td>through the filament, a load</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2><span class="num">4</span>The verdict becomes three checks, not one</h2>
+
+        <p>
+          The breadboard had one verdict: does the netlist match. A lighting circuit gives us three, and they
+          cross-check each other.
+        </p>
+
+        <h3>Check 1 &mdash; behaviour, by truth table</h3>
+        <p>
+          Evaluate connectivity in every switch state and compare against the reference behaviour. For
+          exercise 3 that is four states.
+        </p>
+
+        <div class="tablewrap">
+          <table style="max-width: 24rem">
+            <thead>
+              <tr>
+                <th>Switch 1</th>
+                <th>Switch 2</th>
+                <th>Lamp</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>up</td>
+                <td>up</td>
+                <td><strong>on</strong></td>
+              </tr>
+              <tr>
+                <td>up</td>
+                <td>down</td>
+                <td>off</td>
+              </tr>
+              <tr>
+                <td>down</td>
+                <td>up</td>
+                <td>off</td>
+              </tr>
+              <tr>
+                <td>down</td>
+                <td>down</td>
+                <td><strong>on</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Check 2 &mdash; safety</h3>
+        <p>
+          Independent of whether the lamp lights: is the switch in the ungrounded conductor, is the equipment
+          ground continuous end to end, is there any hot-to-neutral or hot-to-ground short, is the breaker
+          rating within the conductor's ampacity.
+        </p>
+
+        <h3>Check 3 &mdash; match</h3>
+        <p>Does the student's netlist match the instructor's captured reference, up to isomorphism.</p>
+
+        <div class="note ok">
+          <b>Why three beats one</b>
+          <p>
+            A circuit can pass Check 1 and fail Check 3, which means the student found a different but working
+            wiring. That combination is our false-positive guard: when it fires, the comparator is wrong, not
+            the student. The breadboard had no such independent signal.
+          </p>
+        </div>
+
+        <p>
+          It also shrinks Phase 16. We do not need modified nodal analysis. We need graph reachability per
+          switch state plus short detection, which is a morning's work rather than four days.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">5</span>Fault taxonomy</h2>
+
+        <h3>Tier 1 &mdash; intrinsic, no answer key, runs in the browser</h3>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 34%">Fault</th>
+                <th style="width: 44%">Why it matters</th>
+                <th>Authority</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="k">Switched neutral</td>
+                <td>Fixture stays live when off. Kills people changing bulbs</td>
+                <td>NEC 404.2(B)</td>
+              </tr>
+              <tr>
+                <td class="k">Hot and neutral reversed</td>
+                <td>Shell of the lampholder is live</td>
+                <td>NEC 200.11</td>
+              </tr>
+              <tr>
+                <td class="k">Equipment ground missing or broken</td>
+                <td>No fault path, so the breaker never trips</td>
+                <td>NEC 250.4</td>
+              </tr>
+              <tr>
+                <td class="k">Hot-to-neutral short</td>
+                <td>Dead short across the branch</td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td class="k">Hot-to-ground short</td>
+                <td>Same, through the ground path</td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td class="k">Unterminated conductor</td>
+                <td>Live copper loose in a box</td>
+                <td>&mdash;</td>
+              </tr>
+              <tr>
+                <td class="k">Double-tapped breaker</td>
+                <td>Two conductors on a one-conductor lug</td>
+                <td>NEC 110.14</td>
+              </tr>
+              <tr>
+                <td class="k">Breaker rating over conductor ampacity</td>
+                <td>Conductor cooks before the breaker opens</td>
+                <td>NEC 240.4</td>
+              </tr>
+              <tr>
+                <td class="k">Wire below 2.0 mm&sup2; TW on lighting</td>
+                <td>Their own stated minimum</td>
+                <td>Info Sheet 2.3-1 &sect;G</td>
+              </tr>
+              <tr>
+                <td class="k">Switch not at 1.5 m</td>
+                <td>Their own stated mounting height</td>
+                <td>Info Sheet 2.3-1 &sect;F</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Tier 2 &mdash; needs the reference, runs on the API</h3>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 44%">Fault</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="k">Hot feed on a traveler instead of the common</td>
+                <td>
+                  Lamp works in one position of the first switch, dead in the other. The classic three-way
+                  failure
+                </td>
+              </tr>
+              <tr>
+                <td class="k">Switch leg on a traveler instead of the common</td>
+                <td>Same symptom, other end of the run</td>
+              </tr>
+              <tr>
+                <td class="k">Both travelers on one terminal</td>
+                <td>Second traveler does nothing; lamp dead in one position</td>
+              </tr>
+              <tr>
+                <td class="k">Lamp on the wrong gang of the duplex switch</td>
+                <td>Both lamps work, wrong switch controls each</td>
+              </tr>
+              <tr>
+                <td class="k">Device on the wrong branch circuit</td>
+                <td>Load schedule violation</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Ten Tier 1 rules and five Tier 2 classes. The existing plan budgeted for eight Tier 1 rules, so
+          Phase 13 is the same size. Every one of these cites a code article or their own material, which is a
+          stronger footing than the breadboard taxonomy ever had.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">6</span>The headline metric survives, and sharpens</h2>
+
+        <p>
+          The existing plan's most important number is that
+          <strong>a correct circuit built differently must produce zero faults</strong>. On a breadboard that
+          meant the same circuit built on different rows. Here it means something better, because three-way
+          circuits contain a real isomorphism that students hit constantly.
+        </p>
+
+        <blockquote>
+          <p>
+            <strong>The two travelers are interchangeable.</strong> It does not matter which traveler terminal
+            on the first switch connects to which on the second. Both wirings are electrically identical, both
+            work, and students produce both.
+          </p>
+        </blockquote>
+
+        <figure>
+          <svg
+            viewBox="0 0 800 268"
+            role="img"
+            aria-label="Three three-way switch wirings side by side. The reference has the hot feed on switch one's common and the two travelers running straight across. The second has the travelers crossed over, which is electrically identical and must not be flagged as a fault. The third has the hot feed landed on a traveler terminal instead of the common, which leaves the lamp working in only one switch position and must be flagged."
+          >
+            <defs>
+              <marker id="pt" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="4" markerHeight="4">
+                <circle cx="4" cy="4" r="3" fill="currentColor" />
+              </marker>
+            </defs>
+
+            <!-- ============ panel A : reference ============ -->
+            <text x="14" y="20" font-size="11.5" font-weight="700" fill="hsl(142 71% 30%)">
+              A &middot; REFERENCE
+            </text>
+            <rect
+              x="10"
+              y="30"
+              width="242"
+              height="176"
+              rx="8"
+              fill="none"
+              stroke="hsl(142 71% 30%)"
+              stroke-width="1.6"
+            />
+
+            <text x="40" y="52" font-size="9.5" fill="currentColor" opacity="0.7">SW 1</text>
+            <text x="196" y="52" font-size="9.5" fill="currentColor" opacity="0.7">SW 2</text>
+
+            <!-- sw1 terminals -->
+            <circle cx="58" cy="72" r="4.5" fill="hsl(0 72% 45%)" />
+            <text x="68" y="76" font-size="9.5" font-weight="600" fill="currentColor">COM</text>
+            <circle cx="58" cy="106" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="68" y="110" font-size="9.5" fill="currentColor">T1</text>
+            <circle cx="58" cy="136" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="68" y="140" font-size="9.5" fill="currentColor">T2</text>
+
+            <!-- sw2 terminals -->
+            <circle cx="204" cy="72" r="4.5" fill="hsl(221 83% 51%)" />
+            <text x="166" y="76" font-size="9.5" font-weight="600" fill="currentColor" text-anchor="end">
+              COM
+            </text>
+            <circle cx="204" cy="106" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="192" y="110" font-size="9.5" fill="currentColor" text-anchor="end">T1</text>
+            <circle cx="204" cy="136" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="192" y="140" font-size="9.5" fill="currentColor" text-anchor="end">T2</text>
+
+            <!-- feed + lamp -->
+            <line x1="24" y1="72" x2="53" y2="72" stroke="hsl(0 72% 45%)" stroke-width="2" />
+            <text x="22" y="66" font-size="9" fill="hsl(0 72% 45%)" text-anchor="end" font-weight="600">
+              HOT
+            </text>
+            <line x1="209" y1="72" x2="240" y2="72" stroke="hsl(221 83% 51%)" stroke-width="2" />
+            <text x="240" y="66" font-size="9" fill="hsl(221 83% 51%)" text-anchor="end" font-weight="600">
+              LAMP
+            </text>
+
+            <!-- travelers straight -->
+            <line x1="63" y1="106" x2="199" y2="106" stroke="currentColor" stroke-width="1.8" />
+            <line x1="63" y1="136" x2="199" y2="136" stroke="currentColor" stroke-width="1.8" />
+
+            <text
+              x="131"
+              y="176"
+              font-size="10.5"
+              font-weight="700"
+              fill="hsl(142 71% 30%)"
+              text-anchor="middle"
+            >
+              Works
+            </text>
+            <text x="131" y="193" font-size="9.5" fill="currentColor" opacity="0.75" text-anchor="middle">
+              what the instructor captured
+            </text>
+
+            <!-- ============ panel B : crossed, still correct ============ -->
+            <text x="283" y="20" font-size="11.5" font-weight="700" fill="hsl(142 71% 30%)">
+              B &middot; TRAVELERS CROSSED
+            </text>
+            <rect
+              x="279"
+              y="30"
+              width="242"
+              height="176"
+              rx="8"
+              fill="none"
+              stroke="hsl(142 71% 30%)"
+              stroke-width="1.6"
+            />
+
+            <text x="309" y="52" font-size="9.5" fill="currentColor" opacity="0.7">SW 1</text>
+            <text x="465" y="52" font-size="9.5" fill="currentColor" opacity="0.7">SW 2</text>
+
+            <circle cx="327" cy="72" r="4.5" fill="hsl(0 72% 45%)" />
+            <text x="337" y="76" font-size="9.5" font-weight="600" fill="currentColor">COM</text>
+            <circle cx="327" cy="106" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="337" y="110" font-size="9.5" fill="currentColor">T1</text>
+            <circle cx="327" cy="136" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="337" y="140" font-size="9.5" fill="currentColor">T2</text>
+
+            <circle cx="473" cy="72" r="4.5" fill="hsl(221 83% 51%)" />
+            <text x="435" y="76" font-size="9.5" font-weight="600" fill="currentColor" text-anchor="end">
+              COM
+            </text>
+            <circle cx="473" cy="106" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="461" y="110" font-size="9.5" fill="currentColor" text-anchor="end">T1</text>
+            <circle cx="473" cy="136" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="461" y="140" font-size="9.5" fill="currentColor" text-anchor="end">T2</text>
+
+            <line x1="293" y1="72" x2="322" y2="72" stroke="hsl(0 72% 45%)" stroke-width="2" />
+            <text x="291" y="66" font-size="9" fill="hsl(0 72% 45%)" text-anchor="end" font-weight="600">
+              HOT
+            </text>
+            <line x1="478" y1="72" x2="509" y2="72" stroke="hsl(221 83% 51%)" stroke-width="2" />
+            <text x="509" y="66" font-size="9" fill="hsl(221 83% 51%)" text-anchor="end" font-weight="600">
+              LAMP
+            </text>
+
+            <!-- travelers crossed -->
+            <line x1="332" y1="106" x2="468" y2="136" stroke="hsl(30 95% 38%)" stroke-width="1.8" />
+            <line x1="332" y1="136" x2="468" y2="106" stroke="hsl(30 95% 38%)" stroke-width="1.8" />
+
+            <text
+              x="400"
+              y="176"
+              font-size="10.5"
+              font-weight="700"
+              fill="hsl(142 71% 30%)"
+              text-anchor="middle"
+            >
+              Works &mdash; identical circuit
+            </text>
+            <text
+              x="400"
+              y="193"
+              font-size="9.5"
+              font-weight="600"
+              fill="hsl(142 71% 30%)"
+              text-anchor="middle"
+            >
+              must NOT be flagged
+            </text>
+
+            <!-- ============ panel C : hot on traveler ============ -->
+            <text x="552" y="20" font-size="11.5" font-weight="700" fill="hsl(0 72% 45%)">
+              C &middot; HOT ON A TRAVELER
+            </text>
+            <rect
+              x="548"
+              y="30"
+              width="242"
+              height="176"
+              rx="8"
+              fill="none"
+              stroke="hsl(0 72% 45%)"
+              stroke-width="1.6"
+            />
+
+            <text x="578" y="52" font-size="9.5" fill="currentColor" opacity="0.7">SW 1</text>
+            <text x="734" y="52" font-size="9.5" fill="currentColor" opacity="0.7">SW 2</text>
+
+            <circle cx="596" cy="72" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="586" y="76" font-size="9.5" font-weight="600" fill="currentColor" text-anchor="end">
+              COM
+            </text>
+            <circle cx="596" cy="106" r="4.5" fill="hsl(0 72% 45%)" />
+            <text x="606" y="110" font-size="9.5" fill="currentColor">T1</text>
+            <circle cx="596" cy="136" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="606" y="140" font-size="9.5" fill="currentColor">T2</text>
+
+            <circle cx="742" cy="72" r="4.5" fill="hsl(221 83% 51%)" />
+            <text x="704" y="76" font-size="9.5" font-weight="600" fill="currentColor" text-anchor="end">
+              COM
+            </text>
+            <circle cx="742" cy="106" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="730" y="110" font-size="9.5" fill="currentColor" text-anchor="end">T1</text>
+            <circle cx="742" cy="136" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+            <text x="730" y="140" font-size="9.5" fill="currentColor" text-anchor="end">T2</text>
+
+            <!-- hot lands on T1 instead of COM -->
+            <line x1="562" y1="106" x2="591" y2="106" stroke="hsl(0 72% 45%)" stroke-width="2.4" />
+            <text x="560" y="100" font-size="9" fill="hsl(0 72% 45%)" text-anchor="end" font-weight="600">
+              HOT
+            </text>
+            <line x1="747" y1="72" x2="778" y2="72" stroke="hsl(221 83% 51%)" stroke-width="2" />
+            <text x="778" y="66" font-size="9" fill="hsl(221 83% 51%)" text-anchor="end" font-weight="600">
+              LAMP
+            </text>
+
+            <!-- COM of sw1 now carries a traveler -->
+            <line x1="601" y1="72" x2="737" y2="106" stroke="currentColor" stroke-width="1.8" />
+            <line x1="601" y1="136" x2="737" y2="136" stroke="currentColor" stroke-width="1.8" />
+
+            <text
+              x="669"
+              y="176"
+              font-size="10.5"
+              font-weight="700"
+              fill="hsl(0 72% 45%)"
+              text-anchor="middle"
+            >
+              Dead in one SW1 position
+            </text>
+            <text
+              x="669"
+              y="193"
+              font-size="9.5"
+              font-weight="600"
+              fill="hsl(0 72% 45%)"
+              text-anchor="middle"
+            >
+              must BE flagged
+            </text>
+
+            <!-- footer line -->
+            <text x="14" y="234" font-size="10.5" font-weight="700" fill="currentColor">
+              B and C differ from A by one conductor each.
+            </text>
+            <text x="14" y="252" font-size="10.5" fill="currentColor">
+              Telling them apart is the whole job of the comparator &mdash; and the whole argument on defence.
+            </text>
+          </svg>
+          <figcaption>
+            <strong>The test case that matters.</strong> A comparator matching conductors by terminal name
+            flags B as a fault. It must not. It must still catch C, which looks almost identical on the board.
+          </figcaption>
+        </figure>
+
+        <p>
+          Other genuine isomorphisms to seed the negative corpus with: which of several neutral conductors
+          lands on which neutral terminal, splice ordering inside a box, and which physical conduit path a
+          conductor takes between the same two terminals.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">7</span>What carries over untouched</h2>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 24%">Part</th>
+                <th style="width: 18%">Phases</th>
+                <th>Carries over</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="k">A &mdash; Student shell</td>
+                <td>0&ndash;8</td>
+                <td>
+                  <strong>Entirely.</strong> Auth, classes, dashboard, settings and the instructor shell do
+                  not know what the domain is. Only Phase 7's 3D content changes, not its layout
+                </td>
+              </tr>
+              <tr>
+                <td class="k">B &mdash; Engine</td>
+                <td>11, 12, 14, 15, 17&ndash;20</td>
+                <td>
+                  Netlist extraction, Learn Mode, the comparator, fault presentation, telemetry, analytics,
+                  PWA and the evaluation harness. No algorithmic change
+                </td>
+              </tr>
+              <tr>
+                <td class="k">C &mdash; Tasks, grading, AI</td>
+                <td>22&ndash;25</td>
+                <td>
+                  <strong>Entirely.</strong> Deadlines, timers, auto-grading, the release gate and the AI
+                  Coach are domain-agnostic
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>Roughly three quarters of the existing plan is unaffected. The pivot touches four phases.</p>
+      </section>
+
+      <section>
+        <h2><span class="num">8</span>What changes</h2>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 9%">Phase</th>
+                <th style="width: 33%">Was</th>
+                <th style="width: 38%">Becomes</th>
+                <th class="num">Effort</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="k">9</td>
+                <td>Board geometry, 830 holes, union-find over strips</td>
+                <td>Booth topology, named terminals, union-find over splices</td>
+                <td class="num">4d &rarr; <strong>3d</strong></td>
+              </tr>
+              <tr>
+                <td class="k">10</td>
+                <td>Drag components, raycast to holes, span validation</td>
+                <td>Pull conductors, land on named terminals, per-device rules</td>
+                <td class="num">6d &rarr; <strong>5d</strong></td>
+              </tr>
+              <tr>
+                <td class="k">13</td>
+                <td>Eight intrinsic breadboard rules</td>
+                <td>Ten code-based rules from section 5</td>
+                <td class="num">4d &rarr; <strong>4d</strong></td>
+              </tr>
+              <tr>
+                <td class="k">16</td>
+                <td>Modified nodal analysis, Gaussian elimination</td>
+                <td>Switch-state reachability and short detection</td>
+                <td class="num">4d &rarr; <strong>2d</strong></td>
+              </tr>
+              <tr>
+                <td class="k">new</td>
+                <td>&mdash;</td>
+                <td>Truth-table verdict and the three-check reconciliation</td>
+                <td class="num">&mdash; &rarr; <strong>2d</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Net: <strong>Part B drops from 50 to 46 days.</strong> The saving is real but small; do not spend it
+          in advance.
+        </p>
+
+        <div class="note">
+          <b>One addition worth making</b>
+          <p>
+            Self-Check 2.3-1 is five questions with an answer key, already written. Wiring it in as a short
+            pre-quiz costs about a day and gives the evaluation chapter a knowledge score to sit beside the
+            performance score. Optional, and easy to cut.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2><span class="num">9</span>Timeline</h2>
+
+        <div class="tablewrap">
+          <table style="max-width: 30rem">
+            <thead>
+              <tr>
+                <th>Part</th>
+                <th>Phases</th>
+                <th class="num">Days</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="k">A &mdash; Student shell</td>
+                <td>0&ndash;8</td>
+                <td class="num">35</td>
+              </tr>
+              <tr>
+                <td class="k">B &mdash; Engine</td>
+                <td>9&ndash;20</td>
+                <td class="num">46</td>
+              </tr>
+              <tr>
+                <td class="k">C &mdash; Tasks, grading, AI</td>
+                <td>22&ndash;25</td>
+                <td class="num">19</td>
+              </tr>
+              <tr>
+                <td class="k">Evaluation</td>
+                <td>21</td>
+                <td class="num">10</td>
+              </tr>
+              <tr>
+                <td class="k"><strong>Total</strong></td>
+                <td></td>
+                <td class="num"><strong>~110 days</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Within two days of the breadboard plan, so the pivot is not a schedule event.
+          <strong>Phases 0 to 4 are already built and are unaffected.</strong> No work is thrown away.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">10</span>Risks the pivot introduces</h2>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 42%">Risk</th>
+                <th>Mitigation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="k">
+                  3D booth is more complex than a flat board: a panel, boxes at height, devices with several
+                  terminals
+                </td>
+                <td>
+                  Wiring-only scope; boxes pre-placed; camera snaps to one box at a time rather than free
+                  orbit
+                </td>
+              </tr>
+              <tr>
+                <td class="k">Conductor routing looks like spaghetti in 3D</td>
+                <td>
+                  Route conductors along conduit automatically. The student picks terminals, not paths. The
+                  path was never the assessment
+                </td>
+              </tr>
+              <tr>
+                <td class="k">Team has less domain intuition for wiring faults than for breadboards</td>
+                <td>
+                  Every fault in section 5 cites a code article. Have an electrician review the corpus once,
+                  before Phase 20
+                </td>
+              </tr>
+              <tr>
+                <td class="k">
+                  Panel objects that the truth table alone is enough, making the comparator redundant
+                </td>
+                <td>
+                  It is not. The truth table cannot tell a switched neutral from a correct circuit, because
+                  the lamp behaves identically. Lead with that example
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2><span class="num">11</span>What we need to decide</h2>
+        <ol>
+          <li><strong>Wiring-only scope</strong> &mdash; accept, or add box mounting and conduit running.</li>
+          <li>
+            <strong>Three exercises or two</strong> &mdash; dropping exercise 1 loses the gentle on-ramp but
+            saves little, since it shares all its machinery with exercise 2.
+          </li>
+          <li><strong>Self-Check quiz in or out.</strong></li>
+        </ol>
+        <p>Nothing else about the project changes.</p>
+      </section>
+    </main>
+  </body>
+</html>

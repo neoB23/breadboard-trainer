@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)" />
+    <meta
+      name="description"
+      content="Smart Breadboard Diagnostic Trainer — build circuits, get diagnosed, learn faster."
+    />
+    <link rel="icon" type="image/svg+xml" href="/board.svg" />
+    <title>Breadboard Trainer</title>
+    <script>
+      // Applies the stored theme before first paint so a dark-mode user never
+      // sees a white flash. Mirrors applyPreferences() in src/app/preferences.ts.
+      ;(function () {
+        try {
+          var stored = JSON.parse(localStorage.getItem('bbt.preferences') || '{}')
+          var prefs = stored.state || {}
+          // Light is the default. Dark is only applied when the person has
+          // chosen it, or has chosen "system" and their OS is dark — an
+          // unset preference means light, not "whatever the OS says".
+          var dark =
+            prefs.theme === 'dark' ||
+            (prefs.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          var root = document.documentElement
+          if (dark) root.classList.add('dark')
+          if (prefs.highContrast) root.classList.add('high-contrast')
+          if (prefs.reducedMotion) root.classList.add('reduce-motion')
+          if (prefs.largerText) root.classList.add('text-larger')
+          root.style.colorScheme = dark ? 'dark' : 'light'
+          // Paint the ground now too — the stylesheet has not parsed yet, and on a
+          // slow connection the gap between here and first paint is visible.
+          root.style.background = dark ? '#111827' : '#f8fafc'
+        } catch (e) {
+          /* first visit, or storage blocked — light is the default */
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,57 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Vercel
+.vercel
+
+# Test output
+coverage
+playwright-report
+test-results
+
+# PGlite — the local Postgres 16 (WASM) data directory used when DATABASE_URL
+# is unset. Regenerated from the committed migrations; never commit it.
+.pglite/
+
+# Throwaway probes and one-off scripts. Never part of the build.
+.scratch/
+
+# Playwright: emailed messages written to disk by the e2e transport, plus its output.
+.e2e-outbox/
+test-results/
+playwright-report/
+.playwright/
+
+# Review screenshots. Taken to check a layout, never a build input.
+.shots/
+
+# The e2e suite's own PGlite cluster - never shared with npm run dev.
+.pglite-e2e/

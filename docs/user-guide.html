@@ -1,0 +1,1188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Breadboard Trainer Team Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <style>
+      /* Palette lifted from the product's own src/styles/tokens.css. */
+      :root {
+        --bg-900: 210 20% 98%;
+        --bg-800: 0 0% 100%;
+        --bg-700: 210 20% 96%;
+        --line: 214 20% 89%;
+        --line-strong: 214 16% 78%;
+        --ink: 217 33% 14%;
+        --ink-2: 215 16% 38%;
+        --ink-3: 215 14% 50%;
+        --accent: 221 83% 51%;
+        --accent-ink: 224 76% 42%;
+        --accent-surface: 214 95% 96%;
+        --ok: 142 71% 30%;
+        --ok-surface: 140 60% 96%;
+        --ok-line: 142 42% 76%;
+        --fault: 0 72% 45%;
+        --fault-surface: 0 86% 97%;
+        --fault-line: 0 68% 85%;
+        --info-line: 215 75% 82%;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --bg-900: 222 30% 9%;
+          --bg-800: 222 26% 12%;
+          --bg-700: 220 22% 17%;
+          --line: 220 18% 22%;
+          --line-strong: 220 14% 34%;
+          --ink: 210 30% 96%;
+          --ink-2: 214 18% 74%;
+          --ink-3: 215 16% 58%;
+          --accent: 214 95% 68%;
+          --accent-ink: 213 94% 78%;
+          --accent-surface: 216 45% 17%;
+          --ok: 142 65% 55%;
+          --ok-surface: 145 45% 14%;
+          --ok-line: 143 35% 28%;
+          --fault: 0 84% 66%;
+          --fault-surface: 0 40% 16%;
+          --fault-line: 0 38% 32%;
+          --info-line: 215 40% 33%;
+        }
+      }
+      :root[data-theme='dark'] {
+        --bg-900: 222 30% 9%;
+        --bg-800: 222 26% 12%;
+        --bg-700: 220 22% 17%;
+        --line: 220 18% 22%;
+        --line-strong: 220 14% 34%;
+        --ink: 210 30% 96%;
+        --ink-2: 214 18% 74%;
+        --ink-3: 215 16% 58%;
+        --accent: 214 95% 68%;
+        --accent-ink: 213 94% 78%;
+        --accent-surface: 216 45% 17%;
+        --ok: 142 65% 55%;
+        --ok-surface: 145 45% 14%;
+        --ok-line: 143 35% 28%;
+        --fault: 0 84% 66%;
+        --fault-surface: 0 40% 16%;
+        --fault-line: 0 38% 32%;
+        --info-line: 215 40% 33%;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: hsl(var(--bg-900));
+        color: hsl(var(--ink));
+        font-family: 'Inter', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .page {
+        max-width: 52rem;
+        margin: 0 auto;
+        padding: 2.5rem clamp(1rem, 5vw, 3rem) 4rem;
+      }
+
+      header.cover {
+        margin-bottom: 1.75rem;
+      }
+      .eyebrow {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: hsl(var(--accent-ink));
+        margin-bottom: 0.5rem;
+      }
+      h1 {
+        font-size: clamp(1.75rem, 4vw, 2.25rem);
+        line-height: 1.15;
+        letter-spacing: -0.025em;
+        margin: 0 0 0.6rem;
+      }
+      .lede {
+        font-size: 1.0625rem;
+        color: hsl(var(--ink-2));
+        margin: 0;
+        max-width: 40rem;
+      }
+
+      section {
+        padding-top: 1.75rem;
+      }
+      h2 {
+        font-size: 1.2rem;
+        letter-spacing: -0.015em;
+        margin: 0 0 0.6rem;
+        padding-bottom: 0.35rem;
+        border-bottom: 2px solid hsl(var(--line-strong));
+      }
+      h2 .num {
+        color: hsl(var(--ink-3));
+        font-weight: 500;
+        margin-right: 0.45rem;
+      }
+      h3 {
+        font-size: 0.95rem;
+        margin: 1.1rem 0 0.35rem;
+      }
+      p {
+        margin: 0 0 0.7rem;
+        max-width: 40rem;
+      }
+      ul,
+      ol {
+        margin: 0 0 0.7rem;
+        padding-left: 1.2rem;
+        max-width: 40rem;
+      }
+      li {
+        margin-bottom: 0.2rem;
+      }
+      strong {
+        font-weight: 600;
+      }
+
+      .note {
+        border: 1px solid hsl(var(--info-line));
+        background: hsl(var(--accent-surface));
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin: 1rem 0;
+        max-width: 40rem;
+      }
+      .note.rule {
+        border-color: hsl(var(--fault-line));
+        background: hsl(var(--fault-surface));
+      }
+      .note.ok {
+        border-color: hsl(var(--ok-line));
+        background: hsl(var(--ok-surface));
+      }
+      .note p:last-child {
+        margin-bottom: 0;
+      }
+      .note b {
+        display: block;
+        margin-bottom: 0.2rem;
+      }
+
+      .tablewrap {
+        overflow-x: auto;
+        margin: 0.9rem 0;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.9rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.42rem 0.65rem;
+        border-bottom: 1px solid hsl(var(--line));
+        vertical-align: top;
+      }
+      thead th {
+        background: hsl(var(--bg-700));
+        font-size: 0.72rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: hsl(var(--ink-2));
+        border-bottom: 1px solid hsl(var(--line-strong));
+      }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      td.k {
+        font-weight: 600;
+      }
+
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+      .cols ol {
+        padding-left: 1.15rem;
+        font-size: 0.9rem;
+        max-width: none;
+      }
+      @media (max-width: 640px) {
+        .cols {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      figure {
+        margin: 1.1rem 0 1.4rem;
+      }
+      figure svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        background: hsl(var(--bg-800));
+        border: 1px solid hsl(var(--line));
+        border-radius: 10px;
+        padding: 0.4rem;
+      }
+      figcaption {
+        font-size: 0.85rem;
+        color: hsl(var(--ink-2));
+        margin-top: 0.55rem;
+        padding-left: 0.75rem;
+        border-left: 3px solid hsl(var(--accent));
+        max-width: 40rem;
+      }
+
+      @media print {
+        @page {
+          margin: 12mm 14mm;
+        }
+        body {
+          background: #fff;
+          color: #101828;
+          font-size: 9.5pt;
+          line-height: 1.4;
+        }
+        .page {
+          max-width: none;
+          padding: 0;
+        }
+        h1 {
+          font-size: 19pt;
+        }
+        .lede {
+          font-size: 10.5pt;
+        }
+        h2 {
+          font-size: 13pt;
+        }
+        section {
+          padding-top: 0.8rem;
+        }
+        p {
+          margin-bottom: 0.5rem;
+        }
+        h2,
+        h3 {
+          break-after: avoid-page;
+        }
+        .note,
+        .tablewrap,
+        figure {
+          break-inside: avoid-page;
+        }
+        .note {
+          padding: 0.55rem 0.8rem;
+          margin: 0.7rem 0;
+        }
+        figure {
+          margin: 0.8rem 0 1rem;
+        }
+        figure svg {
+          border-color: #d0d5dd;
+          background: #fff;
+          max-width: 86%;
+          margin: 0 auto;
+        }
+        figcaption {
+          font-size: 8.5pt;
+        }
+        table {
+          font-size: 8pt;
+        }
+        thead th {
+          background: #f2f4f7;
+        }
+        .note {
+          background: #f8fafc;
+          border-color: #c8d8f7;
+        }
+        .note.rule {
+          background: #fff5f5;
+          border-color: #f2b8b8;
+        }
+        .note.ok {
+          background: #f4fbf6;
+          border-color: #b3ddc0;
+        }
+        .pb {
+          break-before: page;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="cover">
+        <div class="eyebrow">Team Guide &middot; Version 1.1 &middot; September 2026</div>
+        <h1>Smart Breadboard Diagnostic Trainer</h1>
+        <p class="lede">
+          How the system works, start to finish. No electronics or programming knowledge needed.
+        </p>
+      </header>
+
+      <section>
+        <h2><span class="num">1</span>What it does</h2>
+        <p>
+          Electronics students build circuits on a <strong>breadboard</strong>, a plastic board full of holes.
+          When a circuit does not work, the board gives no clue why. The student waits for a teacher who has
+          forty other students. The teacher points at the wrong wire and walks away. Nobody learns how to find
+          the mistake.
+        </p>
+        <p>
+          We put that board in a web browser. The student builds the circuit in 3D. The system compares it
+          with the circuit the teacher already built, finds the mistake, points at the exact row, and asks a
+          question instead of giving the answer.
+        </p>
+      </section>
+
+      <section>
+        <h2><span class="num">2</span>Two modes</h2>
+        <p>Almost every decision in this project comes from this one difference.</p>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 24%">&nbsp;</th>
+                <th>Free Build</th>
+                <th>Teacher's Task</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="k">What it is</td>
+                <td>Practice. Build anything.</td>
+                <td>An assignment from a teacher.</td>
+              </tr>
+              <tr>
+                <td class="k">Graded?</td>
+                <td>No</td>
+                <td>Yes, automatically</td>
+              </tr>
+              <tr>
+                <td class="k">Deadline or timer?</td>
+                <td>No</td>
+                <td>Whatever the teacher set</td>
+              </tr>
+              <tr>
+                <td class="k">Help while building</td>
+                <td>Full</td>
+                <td>Only what the teacher allowed</td>
+              </tr>
+              <tr>
+                <td class="k"><strong>AI feedback</strong></td>
+                <td><strong>Straight away</strong></td>
+                <td><strong>Only after submitting</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note rule">
+          <b>Why the AI stays quiet during a graded task</b>
+          <p>
+            In Free Build there is nothing to cheat on, so the AI helps right away. In a graded task the
+            student is being marked. If the AI explains the mistake while they can still fix it, we are
+            grading work our own software corrected. So the feedback is written when they submit, then held
+            until the deadline.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2><span class="num">3</span>How the AI fits in</h2>
+
+        <p>
+          Think of a blood test. A machine runs the test and gives numbers. A doctor explains those numbers in
+          words you understand. The doctor does not re-run the test by guessing.
+        </p>
+        <p>
+          Our system works the same way. A fixed <strong>checker</strong> decides what is right and wrong. The
+          <strong>AI Coach</strong> only puts that result into friendly words.
+        </p>
+
+        <figure>
+          <svg
+            viewBox="0 0 780 566"
+            role="img"
+            aria-label="A top-to-bottom flow. The student's circuit goes into the Checker, which uses fixed rules and holds the teacher's correct circuit on the server. The Checker produces a list of plain findings. That list splits two ways: to a grade calculator that produces a score, and to the AI Coach that produces feedback in plain English. The AI Coach is last and never decides right or wrong."
+          >
+            <defs>
+              <marker
+                id="ar"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+              </marker>
+              <marker
+                id="arA"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(221 83% 51%)" />
+              </marker>
+            </defs>
+
+            <rect
+              x="268"
+              y="14"
+              width="244"
+              height="52"
+              rx="8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <text x="390" y="38" text-anchor="middle" font-size="14" font-weight="600" fill="currentColor">
+              The circuit the student built
+            </text>
+            <text x="390" y="55" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.65">
+              every wire, every component
+            </text>
+
+            <line
+              x1="390"
+              y1="66"
+              x2="390"
+              y2="106"
+              stroke="currentColor"
+              stroke-width="1.5"
+              marker-end="url(#ar)"
+            />
+
+            <rect
+              x="6"
+              y="118"
+              width="126"
+              height="88"
+              rx="8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.3"
+              stroke-dasharray="5 3"
+              opacity="0.75"
+            />
+            <text x="69" y="140" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">
+              The teacher's
+            </text>
+            <text x="69" y="155" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">
+              correct circuit
+            </text>
+            <text x="69" y="176" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.7">
+              Kept on our server.
+            </text>
+            <text x="69" y="189" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.7">
+              Never sent to a
+            </text>
+            <text x="69" y="200" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.7">
+              student's computer.
+            </text>
+            <line
+              x1="132"
+              y1="162"
+              x2="158"
+              y2="162"
+              stroke="currentColor"
+              stroke-width="1.5"
+              marker-end="url(#ar)"
+            />
+
+            <rect
+              x="160"
+              y="112"
+              width="460"
+              height="100"
+              rx="9"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            />
+            <text x="390" y="140" text-anchor="middle" font-size="15" font-weight="700" fill="currentColor">
+              THE CHECKER
+            </text>
+            <text
+              x="390"
+              y="159"
+              text-anchor="middle"
+              font-size="11"
+              font-weight="600"
+              fill="currentColor"
+              opacity="0.7"
+            >
+              Fixed rules and arithmetic. No AI at all.
+            </text>
+            <text x="390" y="181" text-anchor="middle" font-size="12" fill="currentColor">
+              Compares the two circuits and works out what is wrong,
+            </text>
+            <text x="390" y="198" text-anchor="middle" font-size="12" fill="currentColor">
+              and exactly which row it is on.
+            </text>
+
+            <line
+              x1="390"
+              y1="212"
+              x2="390"
+              y2="252"
+              stroke="currentColor"
+              stroke-width="1.5"
+              marker-end="url(#ar)"
+            />
+            <text x="400" y="238" font-size="11" fill="currentColor" opacity="0.7">
+              produces a list of findings
+            </text>
+
+            <rect
+              x="160"
+              y="258"
+              width="460"
+              height="94"
+              rx="9"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <text x="390" y="281" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">
+              THE FINDINGS &mdash; plain facts
+            </text>
+            <text x="390" y="297" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">
+              the same circuit always gives the same findings
+            </text>
+            <text x="186" y="320" font-size="12" font-weight="700" fill="hsl(142 71% 30%)">&#10003;</text>
+            <text x="204" y="320" font-size="12" fill="currentColor">
+              The resistor value is correct for this circuit
+            </text>
+            <text x="186" y="340" font-size="12" font-weight="700" fill="hsl(0 72% 45%)">&#10007;</text>
+            <text x="204" y="340" font-size="12" fill="currentColor">
+              Row 14 never reaches row 15, so the LED has no path to ground
+            </text>
+
+            <polyline
+              points="390,352 390,378 232,378 232,404"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              marker-end="url(#ar)"
+            />
+            <polyline
+              points="390,352 390,378 548,378 548,404"
+              fill="none"
+              stroke="hsl(221 83% 51%)"
+              stroke-width="1.8"
+              marker-end="url(#arA)"
+            />
+
+            <rect
+              x="132"
+              y="410"
+              width="200"
+              height="62"
+              rx="8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <text x="232" y="434" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">
+              GRADE CALCULATOR
+            </text>
+            <text x="232" y="452" text-anchor="middle" font-size="10.5" fill="currentColor" opacity="0.7">
+              Arithmetic only. No AI.
+            </text>
+
+            <rect
+              x="448"
+              y="410"
+              width="200"
+              height="62"
+              rx="8"
+              fill="none"
+              stroke="hsl(221 83% 51%)"
+              stroke-width="2.5"
+            />
+            <text
+              x="548"
+              y="434"
+              text-anchor="middle"
+              font-size="13"
+              font-weight="700"
+              fill="hsl(221 83% 51%)"
+            >
+              THE AI COACH
+            </text>
+            <text x="548" y="452" text-anchor="middle" font-size="10.5" fill="hsl(221 83% 51%)">
+              Turns findings into words.
+            </text>
+
+            <line
+              x1="232"
+              y1="472"
+              x2="232"
+              y2="500"
+              stroke="currentColor"
+              stroke-width="1.5"
+              marker-end="url(#ar)"
+            />
+            <line
+              x1="548"
+              y1="472"
+              x2="548"
+              y2="500"
+              stroke="hsl(221 83% 51%)"
+              stroke-width="1.8"
+              marker-end="url(#arA)"
+            />
+
+            <rect
+              x="132"
+              y="506"
+              width="200"
+              height="46"
+              rx="8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.3"
+              opacity="0.85"
+            />
+            <text x="232" y="534" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">
+              A score: 72 out of 100
+            </text>
+
+            <rect
+              x="448"
+              y="506"
+              width="200"
+              height="46"
+              rx="8"
+              fill="none"
+              stroke="hsl(221 83% 51%)"
+              stroke-width="1.3"
+            />
+            <text
+              x="548"
+              y="527"
+              text-anchor="middle"
+              font-size="12"
+              font-weight="600"
+              fill="hsl(221 83% 51%)"
+            >
+              Friendly feedback the
+            </text>
+            <text
+              x="548"
+              y="543"
+              text-anchor="middle"
+              font-size="12"
+              font-weight="600"
+              fill="hsl(221 83% 51%)"
+            >
+              student can act on
+            </text>
+
+            <text x="664" y="432" font-size="10" fill="currentColor" opacity="0.75">It never decides</text>
+            <text x="664" y="445" font-size="10" fill="currentColor" opacity="0.75">right or wrong,</text>
+            <text x="664" y="458" font-size="10" fill="currentColor" opacity="0.75">and never sees</text>
+            <text x="664" y="471" font-size="10" fill="currentColor" opacity="0.75">the answer key.</text>
+          </svg>
+          <figcaption>
+            <strong>Figure 1 &mdash; the AI comes last.</strong> Everything that decides right, wrong, and the
+            score happens before it. Turn the AI off and students still get a correct diagnosis and a correct
+            grade, just in blunter words.
+          </figcaption>
+        </figure>
+
+        <div class="note ok">
+          <b>Three sentences to remember</b>
+          <p>
+            <strong>1.</strong> The checker decides what is wrong. <strong>2.</strong> The AI only puts it
+            into words. <strong>3.</strong> The AI may never mention a problem the checker did not find.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2><span class="num">4</span>When the student may read it</h2>
+        <p>Same checker, same AI. Only the timing changes.</p>
+
+        <figure>
+          <svg
+            viewBox="0 0 830 300"
+            role="img"
+            aria-label="Two lanes. In Free Build the student presses Run, the checker and AI produce feedback, and the student reads it straight away. In a Teacher's Task the student presses Submit, the checker and AI produce feedback, but a locked gate holds it on the server until the deadline passes."
+          >
+            <defs>
+              <marker
+                id="ar2"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+              </marker>
+              <marker
+                id="ar2f"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="hsl(0 72% 45%)" />
+              </marker>
+            </defs>
+
+            <text x="10" y="26" font-size="13" font-weight="700" fill="hsl(142 71% 30%)">
+              FREE BUILD &mdash; practice, no marks
+            </text>
+
+            <rect
+              x="10"
+              y="40"
+              width="176"
+              height="58"
+              rx="8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <text x="98" y="65" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">
+              Student presses
+            </text>
+            <text x="98" y="82" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">
+              &#9654; Run
+            </text>
+
+            <line
+              x1="186"
+              y1="69"
+              x2="222"
+              y2="69"
+              stroke="currentColor"
+              stroke-width="1.5"
+              marker-end="url(#ar2)"
+            />
+
+            <rect
+              x="224"
+              y="40"
+              width="238"
+              height="58"
+              rx="8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <text x="343" y="63" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">
+              Checker finds the facts,
+            </text>
+            <text x="343" y="80" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">
+              AI Coach writes them up
+            </text>
+
+            <line
+              x1="462"
+              y1="69"
+              x2="522"
+              y2="69"
+              stroke="hsl(142 71% 30%)"
+              stroke-width="2"
+              marker-end="url(#ar2)"
+            />
+            <text
+              x="492"
+              y="60"
+              text-anchor="middle"
+              font-size="10"
+              fill="hsl(142 71% 30%)"
+              font-weight="600"
+            >
+              at once
+            </text>
+
+            <rect
+              x="524"
+              y="40"
+              width="196"
+              height="58"
+              rx="8"
+              fill="none"
+              stroke="hsl(142 71% 30%)"
+              stroke-width="2"
+            />
+            <text
+              x="622"
+              y="65"
+              text-anchor="middle"
+              font-size="12"
+              font-weight="600"
+              fill="hsl(142 71% 30%)"
+            >
+              Student reads it
+            </text>
+            <text
+              x="622"
+              y="82"
+              text-anchor="middle"
+              font-size="12"
+              font-weight="600"
+              fill="hsl(142 71% 30%)"
+            >
+              immediately
+            </text>
+
+            <text x="736" y="63" font-size="10" fill="currentColor" opacity="0.7">No deadline,</text>
+            <text x="736" y="76" font-size="10" fill="currentColor" opacity="0.7">no marks, nothing</text>
+            <text x="736" y="89" font-size="10" fill="currentColor" opacity="0.7">to cheat on.</text>
+
+            <line
+              x1="10"
+              y1="132"
+              x2="820"
+              y2="132"
+              stroke="currentColor"
+              stroke-width="1"
+              opacity="0.25"
+              stroke-dasharray="4 4"
+            />
+
+            <text x="10" y="164" font-size="13" font-weight="700" fill="hsl(0 72% 45%)">
+              TEACHER'S TASK &mdash; graded
+            </text>
+
+            <rect
+              x="10"
+              y="178"
+              width="176"
+              height="58"
+              rx="8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <text x="98" y="203" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">
+              Student presses
+            </text>
+            <text x="98" y="220" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">
+              Submit
+            </text>
+
+            <line
+              x1="186"
+              y1="207"
+              x2="222"
+              y2="207"
+              stroke="currentColor"
+              stroke-width="1.5"
+              marker-end="url(#ar2)"
+            />
+
+            <rect
+              x="224"
+              y="178"
+              width="238"
+              height="58"
+              rx="8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <text x="343" y="201" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">
+              Checker finds the facts,
+            </text>
+            <text x="343" y="218" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">
+              AI Coach writes them up
+            </text>
+
+            <line
+              x1="462"
+              y1="207"
+              x2="498"
+              y2="207"
+              stroke="currentColor"
+              stroke-width="1.5"
+              marker-end="url(#ar2)"
+            />
+
+            <rect
+              x="500"
+              y="172"
+              width="118"
+              height="70"
+              rx="8"
+              fill="none"
+              stroke="hsl(0 72% 45%)"
+              stroke-width="2.5"
+            />
+            <rect
+              x="546"
+              y="188"
+              width="26"
+              height="19"
+              rx="3"
+              fill="none"
+              stroke="hsl(0 72% 45%)"
+              stroke-width="2"
+            />
+            <path
+              d="M 552 188 v -6 a 7 7 0 0 1 14 0 v 6"
+              fill="none"
+              stroke="hsl(0 72% 45%)"
+              stroke-width="2"
+            />
+            <text x="559" y="224" text-anchor="middle" font-size="12" font-weight="700" fill="hsl(0 72% 45%)">
+              HELD BACK
+            </text>
+            <text x="559" y="238" text-anchor="middle" font-size="9.5" fill="hsl(0 72% 45%)">
+              on the server
+            </text>
+
+            <line
+              x1="618"
+              y1="207"
+              x2="666"
+              y2="207"
+              stroke="hsl(0 72% 45%)"
+              stroke-width="2"
+              marker-end="url(#ar2f)"
+            />
+
+            <rect
+              x="668"
+              y="178"
+              width="152"
+              height="58"
+              rx="8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <text x="744" y="201" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">
+              Student reads it
+            </text>
+            <text x="744" y="218" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">
+              after the deadline
+            </text>
+
+            <text x="10" y="272" font-size="11.5" font-weight="700" fill="currentColor">
+              &ldquo;Held back&rdquo; means the words stay on our server.
+            </text>
+            <text x="10" y="290" font-size="11.5" fill="currentColor">
+              They are not sent to the student's computer at all, so there is nothing on their machine to
+              uncover.
+            </text>
+          </svg>
+          <figcaption>
+            <strong>Figure 2 &mdash; one pipeline, two release times.</strong> Hiding text inside the browser
+            is not a lock. The words stay on the server, and the server decides when the deadline has passed.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <h2><span class="num">5</span>Who does what</h2>
+
+        <div class="cols">
+          <div>
+            <h3>Teacher</h3>
+            <ol>
+              <li>Create a class and share the join code.</li>
+              <li>Write an exercise: title, goal, parts list.</li>
+              <li>
+                <strong>Build the correct circuit once.</strong> The system saves it as the answer key.
+                Everything else depends on this step.
+              </li>
+              <li>Assign it to a class as a task, with a deadline and any other settings.</li>
+              <li>Grades appear automatically as students submit.</li>
+              <li>Feedback opens at the deadline. Override any score if needed.</li>
+              <li>Read the class report and export it.</li>
+            </ol>
+          </div>
+          <div>
+            <h3>Student</h3>
+            <ol>
+              <li>Register and join a class with the code.</li>
+              <li>See what is due, with a countdown.</li>
+              <li>Read the rules before starting: time limit, attempts, help allowed.</li>
+              <li>Build the circuit on the 3D board.</li>
+              <li>Submit, or the timer submits for them.</li>
+              <li>See the score straight away, with a breakdown.</li>
+              <li>Read the AI feedback when it opens.</li>
+              <li>Practise any time in Free Build.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2><span class="num">6</span>What a teacher can set on a task</h2>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 26%">Setting</th>
+                <th>Options</th>
+                <th style="width: 22%">Default</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="k">Deadline</td>
+                <td>When it opens, when it is due, when it closes for good</td>
+                <td>No deadline</td>
+              </tr>
+              <tr>
+                <td class="k">Late work</td>
+                <td>Blocked, accepted, or accepted with a penalty per day</td>
+                <td>Blocked</td>
+              </tr>
+              <tr>
+                <td class="k">Timer</td>
+                <td>None; soft, which warns but lets them continue; hard, which submits at zero</td>
+                <td>None</td>
+              </tr>
+              <tr>
+                <td class="k">Attempts</td>
+                <td>How many, and whether to keep the highest, latest, first, or average</td>
+                <td>Unlimited, highest</td>
+              </tr>
+              <tr>
+                <td class="k">Help allowed</td>
+                <td>None for exams; safety warnings only; or full, with a Check my work button</td>
+                <td>Safety warnings</td>
+              </tr>
+              <tr>
+                <td class="k">Hints</td>
+                <td>Allowed or not, capped, and optionally worth a point deduction</td>
+                <td>Allowed and free</td>
+              </tr>
+              <tr>
+                <td class="k">Grading</td>
+                <td>Automatic, automatic with review, or manual. Total points and pass mark</td>
+                <td>Automatic, 100, 70%</td>
+              </tr>
+              <tr>
+                <td class="k"><strong>Feedback opens</strong></td>
+                <td>Immediately, on submit, at the deadline, or when the teacher releases it</td>
+                <td><strong>At the deadline</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <b>Two things the system enforces on its own</b>
+          <p>
+            Deadlines and timers run on our server, so changing the clock on a laptop does nothing. And
+            immediate feedback cannot be combined with automatic grading and multiple attempts, because that
+            lets a student submit, read the fix, and resubmit until they score full marks.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2><span class="num">7</span>How the grade is worked out</h2>
+        <p>
+          The teacher already built the correct circuit, so the system knows the answer before anyone starts.
+          No human marking is needed.
+        </p>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 34%">Marking line</th>
+                <th style="width: 14%">Points</th>
+                <th>What earns them</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="k">Circuit correctness</td>
+                <td>60</td>
+                <td>How close the connections are to the teacher's, with partial credit</td>
+              </tr>
+              <tr>
+                <td class="k">Component selection</td>
+                <td>10</td>
+                <td>Right parts, right values</td>
+              </tr>
+              <tr>
+                <td class="k">Polarity and orientation</td>
+                <td>10</td>
+                <td>Nothing inserted backwards</td>
+              </tr>
+              <tr>
+                <td class="k">Nothing unsafe</td>
+                <td>10</td>
+                <td>No short circuit when they submit</td>
+              </tr>
+              <tr>
+                <td class="k">Process</td>
+                <td>10</td>
+                <td>Hints used, and problems solved without help</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          The score and its breakdown appear the moment a student submits. Only the AI feedback waits. A
+          number on its own is not a correction, so showing it early costs nothing.
+        </p>
+
+        <div class="note ok">
+          <b>The first thing to test when we demo this</b>
+          <p>
+            A circuit that is <strong>correct but built on different rows</strong> must score full marks.
+            Students do not all build in the same place. If that ever fails, nothing else about the grading
+            matters.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2><span class="num">8</span>The four rules</h2>
+        <ol>
+          <li>The AI never decides whether a circuit is right, and never gives a grade.</li>
+          <li>The AI may never mention a problem the checker did not find.</li>
+          <li>
+            On a graded task, nothing reaches the student before the deadline, and the holding happens on the
+            server.
+          </li>
+          <li>The teacher's answer key never leaves the server.</li>
+        </ol>
+        <p>
+          If the AI is unavailable, or writes something it should not have, students still get the checker's
+          diagnosis in our own wording. It reads more plainly. It is never absent and never wrong.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,129 @@
+Proposed
+Research Title 2
+(not more than 25 words)
+
+Development and Evaluation of a Web-Based Smart Diagnostic Breadboard Trainer as an Instructional Tool for Enhancing Grade 9 Learners' Electronics Circuit Troubleshooting Performance
+
+
+Sustainable Development Goal (SDG) Addressed
+
+The Web-Based Smart Diagnostic Breadboard Trainer primarily supports SDG 4 - Quality Education. It responds directly to Target 4.4, which calls for substantially increasing the number of youth with relevant technical and vocational skills for employment and decent work, because the study develops and evaluates an instructional tool for teaching one specific employable competency, namely the systematic troubleshooting of electronic circuits. It likewise responds to Target 4.a, which calls for education facilities that provide effective learning environments, because the trainer allows learners to build circuits, identify incorrect connections, locate faults on the board, and receive feedback they can understand and act upon. This makes troubleshooting practicable inside a Grade 9 Technology and Livelihood Education class where one teacher handles a large section and cannot inspect every board. Because the trainer is web-based and runs in an ordinary browser without installation, learners may repeat the practice cycle without consuming components and may practice outside laboratory hours, and schools with limited laboratory equipment are not excluded from the activity. It further responds to Target 4.5 on equal access to vocational training for the vulnerable. In many Philippine public schools, learners are grouped for electronics activities so that the cost of components can be shouldered together, with the result that only one member of the group ordinarily performs the hands-on work. Because each learner works on an individual board in the trainer, the opportunity to practice no longer depends on a learner's capacity to contribute to the cost of materials. The trainer is intended to supplement rather than replace the physical laboratory, extending access to practice for both learners and teachers.
+
+The study also supports SDG 9 - Industry, Innovation and Infrastructure, particularly Target 9.5 on enhancing scientific research and upgrading technological capabilities, because it applies diagnostic technology to a long-standing instructional problem in electronics education. By using technology to improve the way students learn electronics, the project promotes innovation in technical education. The competencies the trainer develops, namely systematic fault isolation and evidence-based reasoning, are foundational to the skilled technical workforce on which industrial infrastructure depends.
+
+
+Rationale
+(not more than 300 words; include supporting literature)
+
+In Philippine public schools, electronics instruction in Technology and Livelihood Education is constrained by the cost of components. Learners are commonly grouped so the expense can be shouldered together, but within a group only one learner usually builds the circuit while the rest observe. Hands-on practice is therefore unevenly distributed, and troubleshooting suffers most because it is the least reliably taught skill in the subject. Kinsel et al. (2024), who analyzed fifty-three think-aloud sessions of students debugging circuits, found that only 42% located all planted faults and 38% resorted to random tinkering rather than systematic tracing. Loubser et al. (2024) reported a parallel weakness in teaching, as feedback during practical tasks is dominated by low-level questioning offering little diagnostic guidance.
+
+Recent technologies address this concern. Bianchi et al. (2024) developed BlinkBoard, an augmented breadboard that guides component placement and monitors assembly in real time, and Calixto et al. (2026) developed TRACE, a breadboard-based tester that identifies components and detects defective ones. Faina (2022) developed a circuit simulator with error-detection features that let learners self-correct without an instructor present, while the meta-analysis of Li and Liang (2024), covering forty-six studies, found that virtual laboratories yield a moderate overall benefit (Hedges' g = 0.686), strongest for engagement and motivation.
+
+A gap remains. Existing tools guide assembly, test components, or simulate circuits, but few compare a learner's completed circuit with a correct reference, locate the discrepancy on the board, and explain its probable cause in language a Grade 9 learner can act upon. Existing studies also address university rather than junior high learners.
+
+The proposed trainer pairs circuit assembly with immediate, plain-language diagnostic feedback. It does not replace the physical laboratory but makes practice accessible, giving every learner, rather than one member per group, a board on which to build and troubleshoot.
+
+
+Objectives of the Study
+
+The study generally aims to develop and evaluate a Web-Based Smart Diagnostic Breadboard Trainer as an instructional tool for improving Grade 9 learners' skills in circuit assembly, fault identification, and troubleshooting.
+
+Specifically, the study aims to:
+
+1. Develop a Web-Based Smart Diagnostic Breadboard Trainer that can assist learners in:
+1.1 assembling basic electronic circuits;
+1.2 identifying incorrect or missing circuit connections;
+1.3 locating connection errors at a specific point on the board; and
+1.4 providing understandable diagnostic feedback about detected circuit problems.
+
+2. Determine the level of functionality of the developed Smart Diagnostic Breadboard Trainer, as assessed by expert evaluators, in terms of:
+2.1 circuit connection detection;
+2.2 fault identification;
+2.3 fault localization;
+2.4 diagnostic feedback; and
+2.5 ease of operation.
+
+3. Determine the level of acceptability of the Smart Diagnostic Breadboard Trainer as perceived by the selected respondents in terms of:
+3.1 functionality;
+3.2 usability;
+3.3 accuracy;
+3.4 reliability; and
+3.5 instructional value.
+
+4. Determine the perceived effectiveness of the Smart Diagnostic Breadboard Trainer in supporting learners' development of:
+4.1 circuit assembly skills;
+4.2 component identification;
+4.3 fault identification; and
+4.4 troubleshooting skills.
+
+5. Determine whether significant differences exist in the perceived acceptability of the Smart Diagnostic Breadboard Trainer when the respondents are grouped according to type of respondent.
+
+6. Identify the problems and difficulties encountered by the respondents in using the Smart Diagnostic Breadboard Trainer and use the findings as a basis for further improvement of the device.
+
+
+Review of Literature
+(minimum of 10 literature and studies that are at least 5 years back)
+
+Breadboarding is an important part of circuit prototyping and serves as a method for familiarizing students with fundamental electronics concepts. It provides learners with a practical environment where electronic components can be assembled, tested, and modified before being transferred to a more permanent circuit board. Owen et al. (2026) emphasized the value of breadboarding in electronics learning and presented an instructional sequence in which secondary learners progress from breadboard prototyping to printed circuit board design, arguing that the breadboard stage is what makes the later and less forgiving stage understandable to students. Their work situates breadboarding not as a preliminary activity but as the phase in which conceptual understanding of a circuit is actually formed.
+
+Although conventional breadboards are useful for prototyping, researchers have explored alternative designs to address their physical limitations. Sun et al. (2022) identified the inflexibility of conventional breadboards and introduced JellyBoard, a flexible breadboard that can change shape under applied force and can be constructed using accessible materials. This design provides greater adaptability for electronic prototyping, particularly in applications requiring flexible or soft interfaces. Similarly, Ko et al. (2023) introduced FlexBoard, a prototyping platform built on a living-hinge pattern with inserted terminal strips that allows interactive components such as sensors, actuators, and displays to be integrated into curved and flexible surfaces while preserving standard pin spacing. These studies demonstrate that breadboard technology can be modified to make circuit prototyping more flexible and suitable for different learning and application environments. What they do not address, however, is the difficulty a learner faces once the board has been built and the circuit does not work.
+
+That difficulty has been studied directly. Kinsel et al. (2024) analyzed fifty-three think-aloud interviews in which sophomore engineering students attempted to locate four deliberately planted faults in breadboarded circuits containing resistors, capacitors, operational amplifiers, and diodes. They reported a completion rate of only 42%. The strategies most frequently observed were tracing, testing, pattern matching, and drawing on domain knowledge, while rebuilding, chunking, using instruments, analytical reasoning, and isolation were rarely used. Most notably, 38% of the participants relied on random tinkering, that is, manipulating the circuit without a working hypothesis. The researchers concluded that understanding how students actually troubleshoot should inform laboratory instruction. If university engineering students troubleshoot unsystematically, the assumption that junior high school learners will acquire the skill incidentally cannot be sustained. Loubser et al. (2024) observed a matching deficit on the teaching side. Studying five technology teachers as they gave formative feedback while learners worked through practical design tasks, they found that feedback consisted predominantly of low-level questions, with generative design questions and substantive comments least frequently observed. Their finding locates the problem in the quality and immediacy of the feedback available during practical work.
+
+The integration of technology into breadboards has been explored to provide learners with additional support during circuit construction. Bianchi et al. (2024) developed BlinkBoard, an augmented breadboard designed to guide and monitor students during electronic circuit assembly. Built as an Arduino shield carrying a printed breadboard and fifty LEDs positioned beside each row, the system uses four blinking patterns to guide the placement of components and wires, while input and output pins sense voltage at specified rows. An open communication protocol links each learner's board to an instructor dashboard, supporting both synchronous and remote instruction. Their work demonstrated that technology-assisted guidance can reduce students' dependence on a teaching assistant for routine wiring problems and allow them to focus on understanding circuit behavior.
+
+Beyond guiding students during assembly, recent research has also focused on helping learners identify problems with electronic components. Calixto et al. (2026) introduced TRACE, a breadboard-based electronic component tester developed to identify components, measure their electrical characteristics, and evaluate their condition in real time. The system can test components such as resistors, capacitors, LEDs, transistors, and basic logic gates, providing beginners with immediate information that would otherwise require a separate instrument or the assistance of an instructor, and preventing the error of building a circuit around a component that was already defective. Boyd and Tow (2026) approached the breadboard from the standpoint of accessibility, reporting that an adaptive breadboard design increased opportunities for learners in basic circuits and measurement classes by allowing students to construct circuits more autonomously and by reducing limitations associated with fine-motor abilities. Their work reframes breadboard design as a question of who is able to participate, which is directly relevant to an inclusive junior high school classroom.
+
+Computer-based environments have likewise been shown to support electronics learning. Faina (2022) developed a simulator for Fritzing that reproduces the laboratory experience for learners studying from home, including realistic multimeter behavior and error-detection features that identify common student mistakes so that learners can correct themselves. The author reported that the tool retained its value as a complement to in-person instruction even after remote teaching ended. Evidence on the effectiveness of such environments is now substantial. Li and Liang (2024) meta-analyzed forty-six independent studies drawn from twenty-two publications on virtual laboratories in engineering education and found a moderate overall effect (Hedges' g = 0.686), with the largest effects on learning motivation and engagement, moderate effects on knowledge acquisition, cognitive ability, and operational skill, and a reduction in cognitive load. The authors cautioned that virtual laboratories cannot fully replace hands-on work and recommended deliberate integration of the two.
+
+At the classroom level, Asbendri et al. (2024) conducted a quasi-experimental study with Grade 11 electronics engineering students using a non-equivalent control group design. The group taught with Tinkercad-assisted learning media improved by 11.5% over the group that received direct instruction, and the difference was statistically significant. The study is relevant because its participants are secondary vocational learners, the population closest to Grade 9 TLE learners. Finally, Moelans et al. (2024) surveyed seventy-nine university students working in a virtual experimental environment and found that self-regulated learning was significantly related to engagement, effort, and satisfaction. The researchers emphasized the importance of learning environments that support students' ability to regulate their own learning and recommended personalized and adaptive features. Their finding qualifies the optimism of the preceding studies, since a computer-based laboratory benefits learners who can already regulate their own learning, which argues for a tool that supplies structure and prompting rather than an open workspace.
+
+The reviewed literature demonstrates that breadboards remain valuable tools for hands-on electronics learning and that recent developments have improved their flexibility, accessibility, monitoring capabilities, and diagnostic functions. Sun et al. (2022) and Ko et al. (2023) addressed the physical adaptability of breadboards, while Owen et al. (2026) established their instructional value and Boyd and Tow (2026) emphasized accessibility and autonomous circuit construction. Kinsel et al. (2024) and Loubser et al. (2024) established that troubleshooting is a separate competency that learners do not acquire incidentally and that classroom feedback presently under-serves. Bianchi et al. (2024) demonstrated the potential of augmented breadboards to guide and monitor learners, while Calixto et al. (2026) showed how breadboard-based technology can assist with component identification and testing. Faina (2022), Li and Liang (2024), Asbendri et al. (2024), and Moelans et al. (2024) showed that computer-based environments can deliver immediate feedback, improve measurable outcomes, and reduce dependence on the teacher.
+
+Most importantly, the literature provides a basis for automated and immediate feedback. Bianchi et al. (2024) showed that technology-assisted guidance can reduce students' need for teaching-assistant intervention, while Calixto et al. (2026) demonstrated that real-time diagnostic information can help beginners verify components and reduce errors. Taken together, these studies indicate that students benefit from receiving immediate information while performing practical electronics activities rather than depending entirely on teachers for routine problems. The gap, however, lies at the intersection of these developments. Existing systems guide assembly, test isolated components, improve physical access, or simulate circuit behavior, but no reviewed study reports a low-cost trainer, whether physical or computer-based, that reads the connections of a learner's completed circuit, compares them against a teacher-defined correct reference, locates any discrepancy at a specific point on the board, and explains the probable cause in language a junior high school learner can act upon. Two further gaps are contextual, since the reviewed studies were conducted with university or Grade 11 populations rather than Grade 9 learners, and none was situated in the Philippine K to 12 Technology and Livelihood Education curriculum, where the cost of components commonly obliges learners to work in groups and therefore limits the individual hands-on practice each learner actually receives.
+
+
+Methodology
+(not more than 800 words)
+
+This study will employ a quantitative research design, specifically a descriptive-developmental approach, to develop and evaluate the Web-Based Smart Diagnostic Breadboard Trainer as an instructional tool. The developmental component covers the systematic design, construction, and refinement of the trainer following the ADDIE model, which consists of Analysis, Design, Development, Implementation, and Evaluation. The descriptive component covers the measurement of the developed trainer's functionality, usability, accuracy, reliability, and instructional value. The quantitative approach is appropriate because the study objectively measures the respondents' evaluation of the device against predetermined criteria rather than testing a causal hypothesis.
+
+The participants of the study will be Grade 9 students of a selected public junior high school in the Philippines who have relevant learning experiences in basic electronics or circuit-related activities. Thirty to forty student-respondents will be selected through purposive sampling based on their ability to participate in the actual use and evaluation of the trainer. Two additional groups will be included. Five to ten TLE teachers handling electronics or a related specialization will provide the instructional perspective, and three to five expert evaluators composed of electronics practitioners or educational technology specialists will assess the functionality of the device. The expert group is necessary because student-respondents cannot reliably judge whether a diagnosis is technically correct.
+
+For the development of the device, the researcher will review the K to 12 TLE electronics competencies and consult TLE teachers to identify the circuits and connection errors learners most commonly encounter. The practice environment, fault-detection logic, and feedback statements will then be designed, with all feedback written at a reading level appropriate for Grade 9 learners. The trainer will be developed as a web-based application that runs in an ordinary browser on the school's existing computer units, in which a learner assembles a circuit and the system compares the assembled connections with a teacher-defined reference circuit, locates any discrepancy, and states its probable cause. A trial run will be conducted with a small group of learners not included in the final sample, and the results of the formal evaluation will serve as the basis for the plan of improvement.
+
+The main instrument will be a researcher-made evaluation questionnaire consisting of four parts, namely the respondent profile, the functionality of the trainer, its acceptability in terms of functionality, usability, accuracy, reliability, and instructional value, and its perceived effectiveness in developing circuit assembly, component identification, fault identification, and troubleshooting skills. An open-ended portion will gather the problems and difficulties encountered. A four-point Likert scale will be used for all evaluation items, where 4 is Strongly Agree, 3 is Agree, 2 is Disagree, and 1 is Strongly Disagree. The questionnaire will be content-validated by three experts, namely a TLE teacher-educator, an electronics practitioner, and a research or measurement specialist. It will then be pilot-tested on fifteen Grade 9 learners outside the final sample, and its internal consistency will be established using Cronbach's alpha, with a coefficient of 0.70 or higher accepted as reliable.
+
+For data collection, the researcher will secure written permission from the school administration and coordinate with the subject teacher to schedule the evaluation. Parental consent and learner assent will be obtained before any data is gathered. The selected respondents will be oriented on the purpose of the study, the voluntary nature of their participation, and the proper use of the trainer. They will then perform prescribed circuit activities that include at least one circuit containing a deliberate fault, so that the diagnostic features are actually used rather than merely demonstrated. After using the trainer, the respondents will answer the researcher-made questionnaire. The completed questionnaires will be collected, checked for completeness, and encoded for statistical analysis.
+
+For the data analysis plan, the collected data will be tabulated and analyzed using appropriate statistical measures. Frequency and percentage will be used to summarize the distribution of respondents and the problems and difficulties they reported. The weighted mean and standard deviation will be used to determine the level of functionality, acceptability, and perceived effectiveness of the trainer. The Mann-Whitney U test or the Kruskal-Wallis H test, whichever is appropriate to the number of groups compared, will be used to determine whether significant differences exist in the perceived acceptability of the device across the groups of respondents, tested at the 0.05 level of significance. Weighted means will be interpreted using the following ranges: 3.26 to 4.00, Strongly Agree or Highly Acceptable; 2.51 to 3.25, Agree or Acceptable; 1.76 to 2.50, Disagree or Moderately Acceptable; and 1.00 to 1.75, Strongly Disagree or Not Acceptable.
+
+Participation will be voluntary and may be withdrawn at any time without consequence. All responses will remain anonymous, will be reported only in aggregate, and will be stored securely. No respondent's rating will affect any grade in TLE.
+
+
+References
+(APA 7th Ed.)
+
+Asbendri, B. L., Anori, S., Dewi, I. P., & Efrizon. (2024). Exploring the impact of Tinkercad-assisted learning on student performance in industrial electronics subject. Journal of Hypermedia & Technology-Enhanced Learning, 2(2), 134-148. https://doi.org/10.58536/j-hytel.v2i2.124
+
+Bianchi, A., Moon, K., Dementyev, A., & Je, S. (2024). BlinkBoard: Guiding and monitoring circuit assembly for synchronous and remote physical computing education. HardwareX, 17, e00511. https://doi.org/10.1016/j.ohx.2024.e00511
+
+Boyd, E., & Tow, E. (2026). Removing barriers to circuit prototyping with an adaptive breadboard. https://www.researchgate.net/publication/411942460
+
+Calixto, K. C., Cruz, E. W., Marquez, A., III, Nase, E., & Navarra, L. W. (2026). TRACE: A breadboard-based electronic component tester. Journal of Critical Social Sciences and Review, 1(1), 75-82. https://doi.org/10.5281/zenodo.19872305
+
+Faina, A. (2022). Learning hands-on electronics from home: A simulator for Fritzing. Proceedings of the 25th International Conference Series on Climbing and Walking Robots (CLAWAR 2022). https://doi.org/10.48550/arXiv.2206.07146
+
+Kinsel, M., Crockett, C., Smith, N., & Prpich, G. (2024). Circuit troubleshooting techniques in an electrical and computer engineering laboratory. 2024 ASEE Annual Conference & Exposition. American Society for Engineering Education. https://peer.asee.org/48461
+
+Ko, D., Kim, Y., Zhu, J., Wessely, M., & Mueller, S. (2023). FlexBoard: A flexible breadboard for interaction prototyping on curved and deformable surfaces. Proceedings of the 2023 CHI Conference on Human Factors in Computing Systems. Association for Computing Machinery. https://doi.org/10.1145/3544548.3580748
+
+Li, J., & Liang, W. (2024). Effectiveness of virtual laboratory in engineering education: A meta-analysis. PLOS ONE, 19(12), e0316269. https://doi.org/10.1371/journal.pone.0316269
+
+Loubser, N., Rauscher, W., & Blom, N. (2024). Types of formative feedback provided by technology teachers during practical assessment tasks. Eurasia Journal of Mathematics, Science and Technology Education, 20(6), em2448. https://doi.org/10.29333/ejmste/14586
+
+Moelans, C. B., Geerling, J. J., Radersma, R. D., Moons, M. J., van Diest, P. J., & van der Schaaf, M. F. (2024). Biomedical students' satisfaction with and engagement in laboratory e-learning support are related to their self-regulation. Biochemistry and Molecular Biology Education, 52(3), 262-275. https://doi.org/10.1002/bmb.21810
+
+Owen, S. M., Clevenger, A., Barnes, B., & Moore, T. J. (2026). From breadboards to PCBs: Bringing electronics design into the high school classroom. https://www.researchgate.net/publication/400683998
+
+Sun, L., Pan, D., Fan, Y., Yang, Y., Li, J., Chen, Y., Tao, Y., & Wang, G. (2022). JellyBoard: A flexible breadboard for electronic prototyping. Proceedings of the Ninth International Symposium of Chinese CHI. Association for Computing Machinery. https://doi.org/10.1145/3490355.3490369

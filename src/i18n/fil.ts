@@ -507,13 +507,125 @@ export const fil: Catalog = {
   'sandbox.subtitle':
     'Ang buong estante, walang takdang gawain at walang ipapasa. Bumuo ng kahit ano, subukan ito, at mananatili ito sa computer na ito.',
 
-  /* ---- instructor placeholder ------------------------------------------- */
+  /* ---- teaching: the exercise list -------------------------------------- */
   'teach.title': 'Pagtuturo',
-  'teach.subtitle': 'Ang mga klase mo, ang mga ehersisyo mo, at kung saan nahihirapan ang isang section.',
-  'teach.pending.eyebrow': 'Yugto 6',
-  'teach.pending.title': 'Susunod na ang instructor shell',
-  'teach.pending.description':
-    'Nakahanda na ang API sa likod nito at tinatanggihan nito ang session ng estudyante. Ang mga pahina ang susunod na yugto ng build.',
+  'teach.subtitle':
+    'Ang mga ehersisyo mo, ang reference circuit na pinaghahambingan ng iskor, at kung paano ang bawat klase.',
+  'teach.exercises.title': 'Ang mga ehersisyo mo',
+  'teach.exercises.new': 'Bagong ehersisyo',
+  'teach.exercises.empty.title': 'Wala pang ehersisyo',
+  'teach.exercises.empty.description':
+    'Gumawa ng isa, buuin ang reference circuit nito sa Learn Mode, saka i-publish sa isang klase. Awtomatikong iiskoran ang mga ipinasa laban sa sirkit mo.',
+  'teach.exercises.failed': 'Hindi ma-load ang mga ehersisyo mo. Subukan ulit maya-maya.',
+  'teach.exercises.status.captured': 'May reference na',
+  'teach.exercises.status.notCaptured': 'Wala pang reference',
+  'teach.exercises.status.published': 'Naka-publish',
+  'teach.exercises.status.draft': 'Draft',
+  'teach.exercises.library': 'Library — walang klase',
+  'teach.exercises.attempts': 'Mga attempt: {count}',
+  'teach.exercises.actions.edit': 'I-edit',
+  'teach.exercises.actions.capture': 'Learn Mode',
+  'teach.exercises.actions.scores': 'Mga iskor',
+
+  /* ---- teaching: the exercise editor ------------------------------------ */
+  'teach.editor.crumb': 'Ehersisyo',
+  'teach.editor.newTitle': 'Bagong ehersisyo',
+  'teach.editor.newSubtitle':
+    'Pangalanan ito, sabihin kung ano ang dapat buuin ng estudyante, at punuin ang tray. Susunod ang reference circuit, sa Learn Mode.',
+  'teach.editor.notFound': 'Hindi sa iyo ang ehersisyong iyon.',
+  'teach.editor.failed': 'Hindi ma-load ang ehersisyong ito. Subukan ulit maya-maya.',
+  'teach.editor.details': 'Mga detalye',
+  'teach.editor.fields.title': 'Pamagat',
+  'teach.editor.fields.objective': 'Layunin',
+  'teach.editor.fields.objectiveHint': 'Isa o dalawang pangungusap na magagawa ng estudyante.',
+  'teach.editor.fields.difficulty': 'Hirap',
+  'teach.editor.fields.class': 'Klase',
+  'teach.editor.fields.noClass': 'Walang klase — library lang',
+  'teach.editor.bom.title': 'Tray',
+  'teach.editor.bom.hint':
+    'Ang mga parteng ibibigay sa estudyante. Dapat gamitin ng reference circuit ang bawat isa; ang mga jumper ay budget, hindi requirement.',
+  'teach.editor.bom.empty': 'Wala pang laman ang tray. Idagdag ang mga parteng ibibigay sa estudyante.',
+  'teach.editor.bom.add': 'Idagdag',
+  'teach.editor.bom.label': 'Label',
+  'teach.editor.bom.value': 'Value',
+  'teach.editor.bom.quantity': 'Dami',
+  'teach.editor.bom.remove': 'Tanggalin ang {type}',
+  'teach.editor.bom.type.resistor': 'Resistor',
+  'teach.editor.bom.type.led': 'LED',
+  'teach.editor.bom.type.capacitor': 'Capacitor',
+  'teach.editor.bom.type.diode': 'Diode',
+  'teach.editor.bom.type.transistor': 'Transistor',
+  'teach.editor.bom.type.jumper': 'Jumper wire',
+  'teach.editor.create': 'Gumawa at buuin ang reference',
+  'teach.editor.save': 'I-save ang mga pagbabago',
+  'teach.editor.created': 'Nagawa ang ehersisyo. Buuin na ang reference circuit nito.',
+  'teach.editor.saved': 'Na-save.',
+  'teach.editor.invalid': 'Suriin ang mga field na may marka sa ibaba.',
+  'teach.editor.bomChange.title': 'Baguhin ang tray?',
+  'teach.editor.bomChange.body':
+    'Binuo ang reference circuit mula sa kasalukuyang tray. Kapag binago ito, mabubura ang reference at ma-a-unpublish ang ehersisyo; kukunin mo itong muli sa Learn Mode.',
+  'teach.editor.bomChange.confirm': 'Baguhin ang tray at burahin ang reference',
+  'teach.editor.bomChange.cancel': 'Panatilihin ang tray',
+  'teach.editor.referenceCleared': 'Nabago ang tray — nabura ang reference. Kunin itong muli sa Learn Mode.',
+  'teach.editor.reference.title': 'Reference circuit',
+  'teach.editor.reference.captured':
+    'Nakuha na — {components} na parte. Iiskoran laban dito ang bawat ipinasa sa sandaling dumating.',
+  'teach.editor.reference.missing':
+    'Hindi pa nakukuha. Hindi maiiskoran ang mga estudyante hangga’t wala ito.',
+  'teach.editor.reference.open': 'Buksan ang Learn Mode',
+  'teach.editor.publish.title': 'Pag-publish',
+  'teach.editor.publish.label': 'Naka-publish sa mga estudyante',
+  'teach.editor.publish.needsReference': 'Kunin muna ang reference circuit sa Learn Mode bago i-publish.',
+  'teach.editor.publish.on': 'Naka-publish. Masisimulan na ito ng mga estudyante sa klase.',
+  'teach.editor.publish.off': 'Na-unpublish. Hindi na ito nakikita ng mga estudyante.',
+  'teach.editor.scores': 'Tingnan ang mga iskor',
+
+  /* ---- teaching: Learn Mode --------------------------------------------- */
+  'teach.capture.crumb': 'Learn Mode',
+  'teach.capture.subtitle':
+    'Buuin ang sirkit gaya ng gagawin ng estudyanteng buo ang iskor. Iiskoran laban dito ang bawat ipinasa — saanman sa board ito buuin ng estudyante.',
+  'teach.capture.failed': 'Hindi ma-load ang Learn Mode. Subukan ulit maya-maya.',
+  'teach.capture.draftNote': 'Nananatili sa computer na ito ang board mo hanggang kunin mo ito.',
+  'teach.capture.action': 'Kunin bilang reference',
+  'teach.capture.replace': 'Palitan ang reference',
+  'teach.capture.replaceDialog.title': 'Palitan ang reference?',
+  'teach.capture.replaceDialog.body':
+    'Mananatili ang mga naibigay nang iskor, na may markang iniskoran laban sa lumang reference. Ma-a-unpublish ang ehersisyo hanggang i-publish mo ulit.',
+  'teach.capture.replaceDialog.confirm': 'Palitan',
+  'teach.capture.replaceDialog.cancel': 'Panatilihin ang luma',
+  'teach.capture.ready.title': 'Handa nang kunin',
+  'teach.capture.ready.body':
+    'Walang short, protektado ang bawat LED, walang nakalutang, at gamit ang bawat parte sa tray.',
+  'teach.capture.issues.title': 'Hindi pa ito puwedeng maging reference',
+  'teach.capture.issue.empty_board': 'Buuin muna ang sirkit — hindi sirkit ang mga jumper lang.',
+  'teach.capture.issue.short_circuit':
+    'Hindi ligtas: {labels}. Mawawalan ng puntos sa kaligtasan ang estudyanteng gagaya rito.',
+  'teach.capture.issue.floating_lead': 'Walang nakakabit: {labels}.',
+  'teach.capture.issue.unused_bom_component': 'Nasa tray pa: {labels}.',
+  'teach.capture.done': 'Nakuha ang reference. I-publish kapag handa ka na.',
+  'teach.capture.doneReplaced': 'Napalitan ang reference. Minarkahang luma ang mga naunang iskor: {count}.',
+  'teach.capture.publish': 'I-publish',
+  'teach.capture.published': 'Naka-publish',
+  'teach.capture.toEditor': 'Bumalik sa ehersisyo',
+
+  /* ---- teaching: scores ------------------------------------------------- */
+  'teach.submissions.crumb': 'Mga iskor',
+  'teach.submissions.subtitle': 'Bawat ipinasa, iniskoran laban sa reference circuit mo.',
+  'teach.submissions.failed': 'Hindi ma-load ang mga iskor. Subukan ulit maya-maya.',
+  'teach.submissions.empty.title': 'Wala pang ipinapasa',
+  'teach.submissions.empty.description':
+    'Lalabas dito ang mga iskor sa sandaling magpasa ang mga estudyante.',
+  'teach.submissions.count': 'Mga ipinasa: {count}',
+  'teach.submissions.average': 'Karaniwang iskor: {score}',
+  'teach.submissions.col.student': 'Estudyante',
+  'teach.submissions.col.submitted': 'Ipinasa',
+  'teach.submissions.col.time': 'Oras',
+  'teach.submissions.col.score': 'Iskor',
+  'teach.submissions.minutes': '{minutes} min',
+  'teach.submissions.notScored': 'Walang iskor',
+  'teach.submissions.stale': 'Lumang reference',
+  'teach.submissions.view': 'Tingnan',
+  'teach.submissions.back': 'Bumalik sa mga iskor',
 
   /* ---- the animated board demo ------------------------------------------ */
   'board.alt':

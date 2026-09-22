@@ -179,9 +179,18 @@ describe('the tray budget', () => {
     expect(spent.get('jumper')).toBe(0)
   })
 
-  it('is fully placed only when every line is at zero', () => {
+  it('is fully placed when every component line is at zero', () => {
     expect(bomFullyPlaced(LED_CIRCUIT_BOM, ledCircuit())).toBe(true)
-    expect(bomFullyPlaced(LED_CIRCUIT_BOM, ledCircuit().slice(1))).toBe(false)
+    expect(
+      bomFullyPlaced(
+        LED_CIRCUIT_BOM,
+        ledCircuit().filter((p) => p.type !== 'resistor'),
+      ),
+    ).toBe(false)
+  })
+
+  it('treats jumpers as a budget: a spare wire left in the tray is not an unfinished circuit', () => {
+    expect(bomFullyPlaced(LED_CIRCUIT_BOM, ledCircuit().slice(1))).toBe(true)
   })
 })
 

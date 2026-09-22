@@ -1,6 +1,6 @@
 import type { Bom } from '@shared/contracts'
 
-import { parseHole, pinCountFor, remainingFor, type PlacedPart } from './model.ts'
+import { parseHole, remainingFor, requiredLines, type PlacedPart } from './model.ts'
 import type { BoardAnalysis } from './nets.ts'
 
 /**
@@ -58,9 +58,10 @@ export function runChecks(
   /* ---- every part out of the tray ---------------------------------------- */
 
   if (requireBom) {
-    const placeable = bom.filter((item) => pinCountFor(item.type) !== null)
-    const remaining = remainingFor(placeable, parts)
-    const missing = placeable.filter((item) => (remaining.get(item.id) ?? 0) > 0)
+    // Jumpers are a budget, not a requirement — see `requiredLines`.
+    const required = requiredLines(bom)
+    const remaining = remainingFor(required, parts)
+    const missing = required.filter((item) => (remaining.get(item.id) ?? 0) > 0)
     checks.push({
       id: 'parts-placed',
       ok: missing.length === 0,

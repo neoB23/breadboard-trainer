@@ -1,4 +1,4 @@
-import { Check, Eraser, ScanLine, Send, Trash2, Undo2 } from 'lucide-react'
+import { Check, Eraser, Save, ScanLine, Send, Trash2, Undo2 } from 'lucide-react'
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -16,6 +16,7 @@ import {
   type HoleId,
   type PlacedPart,
 } from '@/board/model'
+import { validateReference, type ReferenceIssue } from '@/board/netlist'
 import { analyseBoard } from '@/board/nets'
 import {
   Button,
@@ -60,10 +61,18 @@ import { WorkspaceBoard } from './workspace-board'
  * The solver that knows the difference is Phase 16.
  * ---------------------------------------------------------------------------
  *
- * Two modes, one component. With an `attempt` this is an exercise: the BOM is
- * a budget, the test includes the completeness check, and Hand in exists.
- * Without one it is the free-build sandbox: the tray is a shelf, the board
- * persists to this browser, and the test checks only the electricity.
+ * Three modes, one component:
+ *
+ *   task     an assigned exercise. The BOM is a budget, the test includes the
+ *            completeness check, and Hand in exists — after which the server
+ *            scores the board against the instructor's reference and the AI
+ *            Coach speaks. Never before: the live hints here are the
+ *            deterministic ones, and nothing in this mode calls a model.
+ *   sandbox  free build. The tray is a shelf, the board persists to this
+ *            browser, and the test checks only the electricity.
+ *   capture  Learn Mode. The instructor builds the reference circuit; the
+ *            checks it must pass to become an answer key run live, and
+ *            Capture sends the board to be stored as the reference.
  *
  * Interaction is click-click, not drag. A drag can fail in more ways than it
  * can succeed on a trackpad in a lab, and Tinkercad itself places on click.
@@ -76,13 +85,22 @@ interface Pending {
   holes: HoleId[]
 }
 
+export type WorkspaceMode =
+  | { kind: 'task'; attempt: Attempt }
+  | { kind: 'sandbox'; storageKey: string }
+  | {
+      kind: 'capture'
+      /** Where the unsaved draft waits between visits — this browser only. */
+      draftKey: string
+      /** A reference already exists, so capturing replaces it and has to be confirmed. */
+      hasReference: boolean
+      onCapture: (parts: PlacedPart[], confirmReplace: boolean) => Promise<void>
+    }
+
 export interface WorkspaceProps {
   bom: Bom
-  /** Present for an exercise; absent in the sandbox. */
-  attempt?: Attempt | null
+  mode: WorkspaceMode
   initialParts: PlacedPart[]
-  /** Where the sandbox keeps its board. Ignored when `attempt` is set. */
-  sandboxKey?: string
 }
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'failed'
@@ -90,9 +108,14 @@ type BoardView = '2d' | '3d'
 
 const SCAN_MS = 900
 
-export function Workspace({ bom, attempt = null, initialParts, sandboxKey }: WorkspaceProps) {
+export function Workspace({ bom, mode, initialParts }: WorkspaceProps) {
   const t = useT()
   const navigate = useNavigate()
+
+  const attempt = mode.kind === 'task' ? mode.attempt : null
+  const isSandbox = mode.kind === 'sandbox'
+  const isCapture = mode.kind === 'capture'
+  const localKey = mode.kind === 'sandbox' ? mode.storageKey : mode.kind === 'capture' ? mode.draftKey : null
 
   const [parts, setParts] = React.useState<PlacedPart[]>(initialParts)
   const [history, setHistory] = React.useState<PlacedPart[][]>([])
@@ -105,10 +128,15 @@ export function Workspace({ bom, attempt = null, initialParts, sandboxKey }: Wor
   const [view, setView] = React.useState<BoardView>('2d')
   const [scan, setScan] = React.useState<number | null>(null)
   const [report, setReport] = React.useState<TestReport | null>(null)
+  const [capturing, setCapturing] = React.useState(false)
 
   const occupied = React.useMemo(() => occupiedHoles(parts), [parts])
   const remaining = React.useMemo(() => remainingFor(bom, parts), [bom, parts])
   const analysis = React.useMemo(() => analyseBoard(parts, bom), [parts, bom])
+  const issues = React.useMemo(
+    () => (isCapture ? validateReference(parts, bom) : []),
+    [isCapture, parts, bom],
+  )
 
   /* ---- placement --------------------------------------------------------- */
 
@@ -235,11 +263,12 @@ export function Workspace({ bom, attempt = null, initialParts, sandboxKey }: Wor
     }
 
     if (attempt === null) {
-      // The sandbox belongs to this browser. localStorage can refuse (private
-      // windows, storage cleared); losing the convenience must not throw.
-      if (sandboxKey !== undefined) {
+      // The sandbox and a Learn Mode draft belong to this browser. localStorage
+      // can refuse (private windows, storage cleared); losing the convenience
+      // must not throw.
+      if (localKey !== null) {
         try {
-          window.localStorage.setItem(sandboxKey, JSON.stringify(serialized))
+          window.localStorage.setItem(localKey, JSON.stringify(serialized))
           setSaveState('saved')
         } catch {
           setSaveState('failed')
@@ -257,7 +286,7 @@ export function Workspace({ bom, attempt = null, initialParts, sandboxKey }: Wor
     }, 800)
 
     return () => window.clearTimeout(timer)
-  }, [serialized, attempt, sandboxKey])
+  }, [serialized, attempt, localKey])
 
   /* ---- the test run -------------------------------------------------------- */
 
@@ -278,10 +307,10 @@ export function Workspace({ bom, attempt = null, initialParts, sandboxKey }: Wor
       }
       scanFrame.current = null
       setScan(null)
-      setReport(runChecks(parts, bom, analysis, { requireBom: attempt !== null }))
+      setReport(runChecks(parts, bom, analysis, { requireBom: !isSandbox }))
     }
     scanFrame.current = requestAnimationFrame(step)
-  }, [parts, bom, analysis, attempt])
+  }, [parts, bom, analysis, isSandbox])
 
   React.useEffect(
     () => () => {
@@ -325,7 +354,9 @@ export function Workspace({ bom, attempt = null, initialParts, sandboxKey }: Wor
         completed: analysis.complete,
       })
       toast.ok(t(analysis.complete ? 'workspace.submitted' : 'workspace.submittedIncomplete'))
-      navigate('/dashboard')
+      // Straight to the result: the score and the coach's suggestions are ready
+      // the moment the server answers.
+      navigate(`/results/${attempt.id}`)
     } catch {
       toast.fault(t('error.generic'))
       setSubmitting(false)
@@ -339,7 +370,16 @@ export function Workspace({ bom, attempt = null, initialParts, sandboxKey }: Wor
     .reduce((total, item) => total + item.quantity, 0)
   const placedCount = parts.length
   const leds = parts.filter((part) => part.type === 'led')
-  const isSandbox = attempt === null
+
+  const capture = async (confirmReplace: boolean) => {
+    if (mode.kind !== 'capture') return
+    setCapturing(true)
+    try {
+      await mode.onCapture(parts, confirmReplace)
+    } finally {
+      setCapturing(false)
+    }
+  }
 
   return (
     <div className="grid gap-6 xl:grid-cols-[15rem_minmax(0,1fr)_19rem]">
@@ -525,6 +565,8 @@ export function Workspace({ bom, attempt = null, initialParts, sandboxKey }: Wor
           </Callout>
         ) : null}
 
+        {isCapture ? <ReferenceChecks issues={issues} t={t} /> : null}
+
         {/* ---- test results ------------------------------------------------- */}
         {report !== null ? <TestResults report={report} t={t} /> : null}
 
@@ -615,6 +657,44 @@ export function Workspace({ bom, attempt = null, initialParts, sandboxKey }: Wor
               </Button>
             </>
           ) : null}
+
+          {mode.kind === 'capture' ? (
+            mode.hasReference ? (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button disabled={issues.length > 0 || capturing} loading={capturing}>
+                    <Save aria-hidden="true" />
+                    {t('teach.capture.replace')}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t('teach.capture.replaceDialog.title')}</DialogTitle>
+                    <DialogDescription>{t('teach.capture.replaceDialog.body')}</DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant="secondary">{t('teach.capture.replaceDialog.cancel')}</Button>
+                    </DialogClose>
+                    <DialogClose asChild>
+                      <Button onClick={() => void capture(true)}>
+                        {t('teach.capture.replaceDialog.confirm')}
+                      </Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            ) : (
+              <Button
+                disabled={issues.length > 0 || capturing}
+                loading={capturing}
+                onClick={() => void capture(false)}
+              >
+                <Save aria-hidden="true" />
+                {t('teach.capture.action')}
+              </Button>
+            )
+          ) : null}
         </div>
       </aside>
     </div>
@@ -682,6 +762,43 @@ function TestResults({ report, t }: { report: TestReport; t: TranslateFn }) {
 
       {perfect ? <p className="mt-3 text-sm text-ok-ink">{t('workspace.test.perfect')}</p> : null}
     </section>
+  )
+}
+
+/* -------------------------------------------------------------------------- */
+/* Learn Mode: what stands between this board and an answer key               */
+/* -------------------------------------------------------------------------- */
+
+const ISSUE_COPY: Record<ReferenceIssue['reason'], MessageKey> = {
+  empty_board: 'teach.capture.issue.empty_board',
+  short_circuit: 'teach.capture.issue.short_circuit',
+  floating_lead: 'teach.capture.issue.floating_lead',
+  unused_bom_component: 'teach.capture.issue.unused_bom_component',
+}
+
+/**
+ * The same checks the server runs before it will store a reference, run live
+ * so the instructor never presses Capture into a refusal. A reference has to
+ * be a circuit the trainer would give full marks to — otherwise a student who
+ * copied it exactly would lose points.
+ */
+function ReferenceChecks({ issues, t }: { issues: ReferenceIssue[]; t: TranslateFn }) {
+  if (issues.length === 0) {
+    return (
+      <Callout tone="ok" title={t('teach.capture.ready.title')}>
+        {t('teach.capture.ready.body')}
+      </Callout>
+    )
+  }
+
+  return (
+    <Callout tone="warn" title={t('teach.capture.issues.title')}>
+      <ul className="mt-1 flex list-disc flex-col gap-1.5 pl-4">
+        {issues.map((issue) => (
+          <li key={issue.reason}>{t(ISSUE_COPY[issue.reason], { labels: issue.labels.join(', ') })}</li>
+        ))}
+      </ul>
+    </Callout>
   )
 }
 

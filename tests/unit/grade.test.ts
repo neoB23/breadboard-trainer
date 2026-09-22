@@ -122,6 +122,7 @@ describe('the auto score', () => {
   it('does not grade against the pre-comparator placeholder', () => {
     const judged = gradeSubmission(serializeBoard(student()), BOM, { version: 1, placeholder: true })
     expect(judged.graded).toBeNull()
-    expect(judged.completed).toBe(false) // the fourth jumper is still in the tray
+    // Still judged complete: the spare fourth jumper is a budget, not a requirement.
+    expect(judged.completed).toBe(true)
   })
 })

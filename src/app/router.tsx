@@ -12,8 +12,12 @@ import { LandingPage } from '@/features/landing/landing-page'
 import { NotFoundPage } from '@/features/landing/not-found-page'
 import { OnboardingPage } from '@/features/onboarding/onboarding-page'
 import { SettingsPage } from '@/features/profile/settings-page'
+import { ResultsPage } from '@/features/results/results-page'
 import { SandboxPage } from '@/features/sandbox/sandbox-page'
 import { StyleguidePage } from '@/features/styleguide/styleguide-page'
+import { CapturePage } from '@/features/teach/capture-page'
+import { ExerciseEditorPage } from '@/features/teach/exercise-editor-page'
+import { SubmissionsPage } from '@/features/teach/submissions-page'
 import { TeachPage } from '@/features/teach/teach-page'
 
 /**
@@ -122,6 +126,57 @@ export const router = createBrowserRouter([
         <RoleRoute role="instructor">
           <TeachPage />
         </RoleRoute>
+      </ProtectedRoute>
+    ),
+  },
+
+  {
+    path: '/teach/exercises/new',
+    element: (
+      <ProtectedRoute>
+        <RoleRoute role="instructor">
+          <ExerciseEditorPage />
+        </RoleRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/teach/exercises/:exerciseId',
+    element: (
+      <ProtectedRoute>
+        <RoleRoute role="instructor">
+          <ExerciseEditorPage />
+        </RoleRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/teach/exercises/:exerciseId/capture',
+    element: (
+      <ProtectedRoute>
+        <RoleRoute role="instructor">
+          <CapturePage />
+        </RoleRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/teach/exercises/:exerciseId/submissions',
+    element: (
+      <ProtectedRoute>
+        <RoleRoute role="instructor">
+          <SubmissionsPage />
+        </RoleRoute>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    // The student reads their own; the instructor who teaches the exercise
+    // reads it from the scores list. The API decides which, per attempt.
+    path: '/results/:attemptId',
+    element: (
+      <ProtectedRoute>
+        <ResultsPage />
       </ProtectedRoute>
     ),
   },

@@ -210,12 +210,25 @@ export function remainingFor(bom: Bom, parts: readonly PlacedPart[]): Map<string
   return remaining
 }
 
+/**
+ * The tray lines a finished circuit must use up. Two kinds are left out:
+ *
+ *   - lines the board cannot seat — an `ic` line (none seeded) must not make an
+ *     exercise unfinishable;
+ *   - jumpers. Their quantity is how much wire the student is handed, not how
+ *     much the circuit needs: two circuits that differ only in routing are the
+ *     same circuit, and a tray of four jumpers for a three-jumper answer must
+ *     not leave a correct board "incomplete". Learn Mode capture holds the
+ *     instructor's reference to the same rule.
+ */
+export function requiredLines(bom: Bom): Bom {
+  return bom.filter((item) => item.type !== 'jumper' && pinCountFor(item.type) !== null)
+}
+
 export function bomFullyPlaced(bom: Bom, parts: readonly PlacedPart[]): boolean {
-  // Only lines the board can actually seat count against completion — an `ic`
-  // line (none seeded) must not make an exercise unfinishable.
-  const placeable = bom.filter((item) => pinCountFor(item.type) !== null)
-  const remaining = remainingFor(placeable, parts)
-  return placeable.every((item) => (remaining.get(item.id) ?? 0) === 0)
+  const required = requiredLines(bom)
+  const remaining = remainingFor(required, parts)
+  return required.every((item) => (remaining.get(item.id) ?? 0) === 0)
 }
 
 /* -------------------------------------------------------------------------- */

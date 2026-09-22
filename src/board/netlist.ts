@@ -1,6 +1,13 @@
 import type { Bom, ComponentType } from '@shared/contracts'
 
-import { nodeOf, pinCountFor, remainingFor, type BoardState, type NodeId, type PlacedPart } from './model.ts'
+import {
+  nodeOf,
+  remainingFor,
+  requiredLines,
+  type BoardState,
+  type NodeId,
+  type PlacedPart,
+} from './model.ts'
 import { analyseBoard } from './nets.ts'
 import { UnionFind } from './union-find.ts'
 
@@ -305,7 +312,7 @@ export function validateReference(parts: readonly PlacedPart[], bom: Bom): Refer
     .map((part) => analysis.refs.get(part.id) ?? part.type)
   if (floating.length > 0) issues.push({ reason: 'floating_lead', labels: floating })
 
-  const required = bom.filter((item) => item.type !== 'jumper' && pinCountFor(item.type) !== null)
+  const required = requiredLines(bom)
   const remaining = remainingFor(required, parts)
   const unused = required
     .filter((item) => (remaining.get(item.id) ?? 0) > 0)

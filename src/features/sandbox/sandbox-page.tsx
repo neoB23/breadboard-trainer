@@ -86,7 +86,11 @@ export function SandboxPage() {
       />
 
       <div className="mx-auto w-full max-w-shell px-4 pb-20 pt-8 sm:px-6">
-        <Workspace bom={SHELF} initialParts={initialParts} sandboxKey={SANDBOX_STORAGE_KEY} />
+        <Workspace
+          bom={SHELF}
+          initialParts={initialParts}
+          mode={{ kind: 'sandbox', storageKey: SANDBOX_STORAGE_KEY }}
+        />
       </div>
     </AppShell>
   )

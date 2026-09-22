@@ -196,7 +196,11 @@ export function LabPage() {
 
         {state === 'ready' && exercise ? (
           building && build ? (
-            <Workspace bom={exercise.bom} attempt={build.attempt} initialParts={build.initialParts} />
+            <Workspace
+              bom={exercise.bom}
+              mode={{ kind: 'task', attempt: build.attempt }}
+              initialParts={build.initialParts}
+            />
           ) : (
             <Brief exercise={exercise} starting={starting} onBuild={() => void startBuild(exercise)} />
           )

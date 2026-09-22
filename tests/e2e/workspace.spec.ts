@@ -176,6 +176,13 @@ test('a student builds the first circuit, watches it save, resumes it, and hands
   await expect(page.getByText('The circuit is complete.', { exact: false })).toBeVisible()
   await page.getByRole('dialog').getByRole('button', { name: 'Hand in', exact: true }).click()
 
+  // Straight to the result, scored on the server against the instructor's
+  // reference: this is that circuit, so it is full marks with nothing to fix.
+  await expect(page).toHaveURL(/\/results\/[0-9a-f-]+$/, { timeout: 15_000 })
+  await expect(page.getByTestId('result-score')).toHaveText('100')
+  await expect(page.getByText('It matches the task circuit')).toBeVisible()
+
+  await page.getByRole('link', { name: 'Back to dashboard' }).first().click()
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 10_000 })
   // One of six done, and the totals say so — read from the API, not the toast.
   await expect(page.getByText('1 / 6').first()).toBeVisible()
@@ -196,7 +203,7 @@ test('the classic mistake gets a warning, and Undo takes it back', async ({ page
   await hole(page, '+5V rail, column 5').click()
   await hole(page, 'Ground rail, column 5').click()
 
-  await expect(page.getByText(/nothing to limit current/)).toBeVisible()
+  await expect(page.getByText(/nothing to limit its current/)).toBeVisible()
   await expect(page.getByText('D1 lights')).toBeVisible()
 
   // The scan agrees, and says where: the failed check names D1 and its column.
@@ -208,7 +215,7 @@ test('the classic mistake gets a warning, and Undo takes it back', async ({ page
 
   // Undo is real: the part, its warning and its net rows all go together.
   await page.getByRole('button', { name: 'Undo' }).click()
-  await expect(page.getByText(/nothing to limit current/)).toBeHidden()
+  await expect(page.getByText(/nothing to limit its current/)).toBeHidden()
   await expect(page.getByText('Place a part and its nets appear here, live.')).toBeVisible()
 
   // Leaving keeps the attempt open to resume — the dashboard's Resume promise.
@@ -223,7 +230,7 @@ test('free build keeps a board on this machine and tests without a rubric', asyn
   test.skip(studentEmail === '', 'the registration test did not run')
   await signIn(page, studentEmail)
 
-  await page.getByRole('link', { name: 'Free build' }).click()
+  await page.getByLabel('Primary').getByRole('link', { name: 'Free build' }).click()
   await expect(page).toHaveURL(/\/sandbox$/)
 
   // The shelf, not a budget: the whole kit, nothing to hand in.

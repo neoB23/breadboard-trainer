@@ -2,9 +2,11 @@
 
 Tracks [`build-plan.md`](build-plan.md). A phase is not finished until every box is ticked.
 
-**Where things stand:** Phases 0–4 are built, and every box in them is now ticked. `npm run
-build` is clean, `npm run lint` reports warnings only, `npm test` is **128 passing**, and
-`npm run test:e2e` is **23 passing** in a real browser. Three boxes across the whole plan are
+**Where things stand:** Phases 0–4 are built, and every box in them is now ticked. The
+graded-task slice (build plan v1.3) is built on top — see
+[Vertical slice — graded tasks](#vertical-slice--graded-tasks). `npm run build` is clean,
+`npm run lint` reports warnings only, `npm test` is **288 passing**, and `npm run test:e2e` is
+**27 passing** in a real browser. Three boxes across the whole plan are
 unticked and every one of them is blocked on an account nobody has created yet (Neon, Vercel,
 GitHub) rather than on code.
 
@@ -456,14 +458,54 @@ belonging to a class you are not in, and the screen only reports the answer.
 
 ---
 
+## Vertical slice — graded tasks
+
+Build plan v1.3. A teacher builds the reference circuit, a student's hand-in is scored against it
+on the server, and the AI Coach's suggestions appear after hand-in, never during. Lite versions of
+Phases 11, 12, 14, 23 and 24/25, built ahead of order; §0.0 of the plan lists what is and is not in
+it.
+
+| # | Task | State |
+|---|---|---|
+| 1 | Canonical netlist, position-independent (`src/board/netlist.ts`) | ✅ |
+| 2 | Comparator, exact and deterministic (`src/board/compare.ts`) | ✅ |
+| 3 | Rubric 70/10/10/10, pure (`api/grading/grade.ts`) | ✅ |
+| 4 | Submit scores on the server, atomically; client `completed` ignored | ✅ |
+| 5 | Result route: grade, ≤3 findings, feedback, stale — never the reference | ✅ |
+| 6 | Learn Mode capture: board in, validated, netlist derived | ✅ |
+| 7 | Teacher screens: list, editor, Learn Mode, scores | ✅ |
+| 8 | Result page, hint first | ✅ |
+| 9 | Qwen adapter, digest without identity, grounding check, catalogue fallback | ✅ against a mocked server |
+| 10 | Seed: real references for every published exercise | ✅ |
+| 11 | Phase 24 model bake-off on real hardware | ❌ no model server yet |
+
+### Definition of Done
+
+- [x] The reference circuit built elsewhere on the board scores 100 — unit, API and e2e
+- [x] A missing ground wire scores 77, and the finding names the student's own leg and column
+- [x] Same board, byte-identical grade; adding back a reference wire never lowers the score
+- [x] A double submit is a 409 and cannot replace the first grade
+- [x] No student-reachable response carries the netlist, the reference board or a reference key
+- [x] Model text that fails grounding never reaches the student — asserted on the raw body
+- [x] No request to the model carries the student's name, email, number or any id
+- [x] With no model configured, feedback is the catalogue's wording and nothing else changes
+- [x] Capture refuses each of the four invalid boards with its reason
+- [x] Re-capture marks earlier scores stale and unpublishes; a tray change clears the reference
+- [x] While building a task, the student sees only deterministic hints — asserted in e2e
+- [ ] Coach wording checked against a real Qwen model — **blocked on a model server**
+- [ ] Filipino strings reviewed by a native speaker
+
+---
+
 ## Not started
 
-Phases 5 onward. `src/board/`, `src/render/` and the diagnostics features are still empty.
+Phases 5 onward, as the plan defines them, beyond what the graded-task slice above pulled
+forward. In particular: the Tier 1 rule set (Phase 13), the DC solver (16), telemetry (17),
+analytics (18), offline (19), the evaluation harness (20), and every Part C table and gate
+(22–27) are still to come.
 
 Registered routes: `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`,
-`/verify-email`, `/onboarding`, `/dashboard`, `/lab/:exerciseId`, `/settings`, `/teach`,
+`/verify-email`, `/onboarding`, `/dashboard`, `/lab/:exerciseId`, `/results/:attemptId`,
+`/sandbox`, `/settings`, `/teach`, `/teach/exercises/new`, `/teach/exercises/:exerciseId`,
+`/teach/exercises/:exerciseId/capture`, `/teach/exercises/:exerciseId/submissions`,
 `/styleguide`, and the 404.
-
-`/teach` is still a **deliberate placeholder** — Phase 6 builds it. It exists because a role
-guard needs something to guard. It is not a mock: it says plainly which phase fills it in, and
-the `requireRole('instructor')` behind it is real.

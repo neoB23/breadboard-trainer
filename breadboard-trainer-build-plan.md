@@ -1,12 +1,121 @@
 # Smart Breadboard Diagnostic Trainer — Web Build Documentation
 
-**Version:** 1.2
+**Version:** 1.3
 **Scope:** Full web replacement of the hardware trainer
 **Structure:** Part A (Student Shell) → Part B (Diagnostic Engine) → Part C (Assignments, Grading & AI Coach). A part is not started until the previous one is complete and polished.
 
 ---
 
-## 0.0 What Changed in Version 1.2
+## 0.0 What Changed in Version 1.3
+
+How a graded task behaves is now decided, and the first working slice of it is built — ahead of
+the Part B/C order this document otherwise follows. Everything in 1.2 stands unless a line below
+says otherwise.
+
+### Decided — in a task, the AI speaks after hand-in, never during
+
+| When | What the student gets |
+|---|---|
+| **While building** an assigned exercise | Deterministic live hints only: LED lit or dark, the rail-short and unprotected-LED warnings, the floating count, the live netlist, and "Test the circuit". Nothing in task mode calls a model |
+| **At hand-in** | The server scores the board against the teacher's reference, and the AI Coach words up to three suggestions. Both appear at once on `/results/:attemptId` |
+
+Suggestions are hint-first: the guiding question is shown, and the fix waits behind **Show the
+fix**. Free Build keeps the active coaching of 1.2; it is unaffected.
+
+**Release is immediate after hand-in, for now.** Attempts are not capped yet, so a student can read
+the suggestions and build the task again. That is the hazard §2.1 rule 1 describes. Phase 22's
+`max_attempts` and Phase 25's release gate close it. Until they exist, treat a score as feedback
+on practice, not as a mark.
+
+### Added — the auto score, against the teacher's own circuit
+
+Scored on the server at hand-in, in the same guarded write that closes the attempt. A double
+submit is a 409 from the database, and the client's `completed` flag is ignored.
+
+| Line | Points | From |
+|---|---|---|
+| Circuit | 70 | How much of the reference circuit is joined — the link metric below |
+| Parts | 10 | Reference parts matched to a student part of the same value |
+| Polarity | 10 | LEDs, diodes and transistors the right way round *and* wired in |
+| Safety | 10 | −10 for a rail short, −5 per LED with nothing limiting its current |
+
+The lines are independent: a reversed LED keeps its circuit credit and loses its polarity point, and
+swapped resistor values keep the circuit and lose parts points. An empty board scores 0.
+
+**The link metric** replaces §2.1's edit-distance partial credit for this slice. A reference net
+with k members (pins plus its rail) needs k − 1 links. Under the best mapping of the student's
+parts onto the reference's:
+
+```
+required = Σ_R (|R| − 1)
+matched  = Σ_R Σ_S max(0, |R ∩ S| − 1)
+extra    = Σ_S (distinct reference nets in S − 1)
+ratio    = clamp(0, 1, (matched − extra) / required)
+```
+
+Joining two student nets that share s reference nets changes (matched − extra) by exactly 2s − 1,
+so a right wire never lowers the score and a wrong one costs exactly one link. The metric never
+mentions a column, so **the same circuit built anywhere on the board scores 100** — the headline
+promise, now with a mark on it. The mapping is found exactly, by depth-first search with an
+upper-bound prune and a node budget counted in steps, not time, so it is deterministic on every
+machine. Worked example: the series LED with its ground wire missing scores **77** (47 + 10 + 10 +
+10).
+
+### Added — Learn Mode, for real
+
+- **Capture sends the board, not a netlist.** The server parses it and refuses it (422, with the
+  reason) if it has a short or an unprotected LED, a lead touching nothing, or a tray part left
+  over. Otherwise it derives the netlist with the same functions it grades with, and stores it with
+  the board so Learn Mode can reload it.
+- Re-capture bumps `netlist_version`, unpublishes, and marks scores given against the old reference
+  as stale. A change to the tray clears the reference; the editor asks first.
+- The teacher's screens: `/teach` (the list), `/teach/exercises/new` and `/:id` (details, tray,
+  publishing), `/:id/capture` (Learn Mode), `/:id/submissions` (the scores list).
+
+### Changed — jumpers are a budget, not a requirement
+
+Completeness, the tray check and reference validation no longer require every jumper to be placed.
+A tray of four jumpers for a three-jumper circuit used to leave a correct board "incomplete".
+
+### Built ahead of order — what exists and what does not
+
+| Plan phase | In this slice |
+|---|---|
+| 11 — Netlist | Canonical form in `src/board/netlist.ts`: jumpers collapse, pins by role, rails as anchors |
+| 12 — Learn Mode | Complete, as above |
+| 14 — Comparator | `src/board/compare.ts`: an exact mapping search, not the graph-edit-distance A* §14 describes. Server-side, per §0.2 |
+| 23 — Grading | `api/grading/`: the rubric above, with no late or hint penalties, no `keep_score`, no override, no CSV |
+| 24/25 — Coach | After hand-in only, released immediately; no release gate |
+
+**Not built:** the `assignments` table (deadlines, timers, attempt caps, help policy), the
+`grades` and `ai_feedback` tables, the release gate, instructor overrides and CSV export. The
+grade lives in interim columns on `attempts`, which map one-to-one onto §2.1:
+
+| Interim column | Becomes |
+|---|---|
+| `attempts.score` | `grades.auto_score` |
+| `attempts.score_breakdown` | `grades.auto_breakdown` |
+| `attempts.feedback` | an `ai_feedback` row (its `view` and model metadata) |
+| `attempts.netlist_version`, `graded_at` | the grade's reference revision and timestamp |
+
+### Renamed — so the answer key stays out of every bundle
+
+`tests/bundle/client-secrets.test.ts` refuses the words "golden netlist" anywhere in a build, and
+the teacher's screens now ship in it. So the teacher client never handles that shape.
+`hasGoldenNetlist` is now `hasReference`, and the client option `allowGoldenNetlist` is now
+`allowAnswerKey`. Learn Mode reads the board back as `referenceBoard`, which the tripwire guards
+exactly like the netlist.
+
+### Not yet verified
+
+- **No Qwen server exists yet.** The Coach is tested against a mocked endpoint. In the running app
+  it serves the catalogue's wording until `COACH_BASE_URL` points at a real Ollama or vLLM server.
+  The Phase 24 bake-off is still to run.
+- The new Filipino strings need a native speaker's review.
+
+---
+
+## 0.1 What Changed in Version 1.2
 
 Four decisions, and three things 1.1 got wrong about Free Build that the second decision exposed.
 Everything in 1.1 stands unless a line below says otherwise.
@@ -116,7 +225,7 @@ Section 3.
 
 ---
 
-## 0.1 What Changed in Version 1.1
+## 0.2 What Changed in Version 1.1
 
 Kept as written. Where 1.2 changes something below, 1.2 wins.
 
@@ -288,7 +397,9 @@ tests/
 | `/teach` | instructor | Instructor home |
 | `/teach/classes/:id` | instructor | Roster + class analytics |
 | `/teach/exercises` | instructor | Exercise authoring list |
+| `/teach/exercises/new`, `/teach/exercises/:id` | instructor | Exercise details, tray and publishing |
 | `/teach/exercises/:id/capture` | instructor | **Learn Mode** |
+| `/teach/exercises/:id/submissions` | instructor | The scores list for one exercise |
 | `/teach/reports/:classId` | instructor | Intervention analytics |
 | `/sandbox` | student | **Free Build** — ungraded practice; the AI Coach watches and nudges as you build |
 | `/assignments/:id` | student | Task detail: policy, countdown, attempts left, start |
@@ -613,7 +724,7 @@ much cheaper to do in its original phase than to retrofit.
 | **5** — Student dashboard | The dashboard groups by **assignment**, not by exercise. Each card carries a due date, a countdown when one is within 48 hours, attempts remaining, and the score once released. Add a Free Build entry point beside the assigned work |
 | **6** — Instructor shell | Add the assignment list and the task-builder form as a **shell** here: every field rendered and validated, saving to the real table, with nothing enforced yet. Phase 22 wires enforcement. Building the form early means the Phase 8 usability pre-test can put it in front of a real instructor, which is exactly the feedback that is expensive to get late |
 | **7** — Workspace shell | The header timer becomes a **countdown** when the attempt has an `expires_at`, and stays an elapsed clock otherwise. Design both states now. Add the feedback panel's three withheld states from Phase 25 as static layouts |
-| **13/14** — Diagnostics | Tier 1 stays in the browser. **Tier 2 moves to the API** behind `POST /api/attempts/:id/scan`, per Section 0.1. The comparator itself is unchanged and still a pure function; only its call site moves |
+| **13/14** — Diagnostics | Tier 1 stays in the browser. **Tier 2 moves to the API** behind `POST /api/attempts/:id/scan`, per Section 0.2. The comparator itself is unchanged and still a pure function; only its call site moves |
 | **17** — Telemetry | Add event types `assign_start`, `timer_expire`, `submit_auto`, `grade`, `ai_request`, `ai_fallback`, `feedback_view`. Fault-isolation time must remain computable for the control group, which has no AI Coach at all |
 | **20** — Evaluation harness | Unchanged, and deliberately so. It imports the comparator directly and never calls the API or the model. Add a second harness for the **grader**: the same 150 fixtures, asserting that scores are deterministic and monotonic in edit distance |
 

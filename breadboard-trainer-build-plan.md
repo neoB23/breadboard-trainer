@@ -1,12 +1,124 @@
 # Smart Breadboard Diagnostic Trainer — Web Build Documentation
 
-**Version:** 1.1
+**Version:** 1.2
 **Scope:** Full web replacement of the hardware trainer
 **Structure:** Part A (Student Shell) → Part B (Diagnostic Engine) → Part C (Assignments, Grading & AI Coach). A part is not started until the previous one is complete and polished.
 
 ---
 
-## 0.0 What Changed in Version 1.1
+## 0.0 What Changed in Version 1.2
+
+Four decisions, and three things 1.1 got wrong about Free Build that the second decision exposed.
+Everything in 1.1 stands unless a line below says otherwise.
+
+### Decided — we stay on the breadboard
+
+The lighting-circuits proposal in [`pivot-plan.md`](pivot-plan.md) is **not adopted**. The domain
+stays the breadboard, Part B keeps its 1.1 phases, and nothing built in Phases 0–4 moves. The
+pivot plan is kept for the record only.
+
+### Changed — the Free Build Coach is active
+
+In 1.1 the Coach in Free Build waited to be asked: it spoke when the student pressed **Run**. In
+1.2 it watches the board. When the student pauses, it says one thing: the most important mistake
+on the board or, when there is none, one suggestion. If the same mistake is still there a minute
+later, it narrows the hint. When the student fixes it, it says so. **Run** stays, and still gives
+the full summary.
+
+| Mode | When the Coach speaks |
+|---|---|
+| **Free Build** | Each time the board settles after a change that matters, plus a full summary on Run |
+| **Assigned task** | Unchanged from 1.1: only after submission, and only once the release rule allows it |
+
+Nothing about assigned tasks changes. Active coaching is Free Build only, and the server
+enforces that (Phase 27).
+
+### Added — suggestions, computed rather than invented
+
+"Suggestion" cannot mean "whatever the model thinks of". A novice told by a language model to use
+a 10 Ω resistor burns out an LED, and a grounding check cannot catch advice that has no fact
+behind it to check against. So suggestions come from the engine, exactly as faults do. Phase 26
+adds two deterministic pieces:
+
+- **Suggestion rules.** The circuit works, or will, but is poor practice: an LED so dim it looks
+  dead, two LEDs sharing one resistor, a resistor running hot.
+- **A pattern recognizer.** It names common sub-circuits (a voltage divider, an LED with its
+  resistor, a transistor switch), reads their values off the DC solver, and carries a few curated
+  "try this next" ideas for each.
+
+The engine decides what to say. The model decides only how to word it.
+
+### Changed — the Coach runs on a free, self-hosted Qwen model
+
+1.1 specified a paid, per-request commercial API. 1.2 uses an **open-weight Qwen instruct model**,
+**self-hosted** on a machine the school controls and served by Ollama or vLLM. There is no charge
+per request, and no board state leaves the school.
+
+That trade works because of a decision 1.1 already made: the model never diagnoses anything. It is
+handed a finished digest and asked to word one item from it in under 60 words. A 4–9B-parameter
+model should be able to do that, and Phase 24 measures whether the chosen one does. Where it words
+something badly, the grounding check catches it and serves the deterministic text instead. That is
+the same path the trainer takes with the model switched off.
+
+The Coach talks to the model through one adapter, `api/ai/provider.ts`, which speaks the
+OpenAI-compatible chat-completions protocol. Ollama, vLLM, llama.cpp and most hosted Qwen
+providers serve that protocol. The base URL and the model tag are configuration, so moving to a
+bigger model, other hardware or a hosted provider later changes config, not code.
+
+### Resolved — three things 1.1 got wrong about Free Build
+
+**Free Build has no answer key, so it has no Tier 2.** The 1.1 free-build digest carried a
+comparator verdict (`correct`, `faulted`, `substantially_different`). The comparator needs a golden
+netlist, and a free build has none. The free-build digest is now built from Tier 1, the DC solver
+and Phase 26 only, and its verdict is `clean` or `issues`.
+
+**Streaming and grounding cannot happen in the order 1.1 put them.** 1.1 streamed the Coach's text
+to the student as it was written and checked its grounding once it was finished. A failed check
+would then retract words the student had already read. In 1.2 the student receives no model text
+until the complete message has passed the check. The deterministic fault cards still appear
+instantly, so nobody watches a spinner, and the Coach's wording follows a few seconds later.
+
+**Free Build has no attempt row.** 1.1 made `ai_feedback.attempt_id` `not null` and treated a free
+build as an attempt with no assignment. The sandbox as built keeps its board in the browser on
+purpose (`src/features/sandbox/sandbox-page.tsx`). An attempt appears in an instructor's drill-down
+and in Phase 20's numbers, and a doodle belongs in neither. 1.2 keeps that design and adds a small
+`sandbox_sessions` table (Section 2.1). Each coaching message belongs to either an attempt or a
+sandbox session, never both. The board is sent with each coaching request and is not stored.
+
+### Amendments to existing phases
+
+| Phase | Amendment |
+|---|---|
+| **13** — Tier 1 | The rule registry gains a third severity, `suggestion`, below `advisory`. Phase 26's rules register there, so one pass returns faults and suggestions together |
+| **15** — Fault presentation | Every fault class needs all three hint-ladder rungs written, in both languages. Phase 27 climbs the ladder automatically in Free Build, and the deterministic path serves these strings whenever the model does not answer |
+| **16** — DC solver | Expose per-component current, voltage drop and power in the solver result. Phase 26 reads them |
+| **17** — Telemetry | Free Build does not write to `events`, which hangs off attempts. Coaching outcomes are recorded on `ai_feedback` instead (Section 2.1) |
+| **20** — Evaluation harness | Add fixtures for every Phase 26 rule and pattern, including equivalent alternatives that must draw no suggestion. Report them separately from the headline accuracy numbers |
+| **21** — Pilot | Free Build coaching follows the student's arm. See Section 2.10 |
+
+### What this costs
+
+Phase 26 adds 5 days to Part B. Phase 27 adds 6 days to Part C. Phase 24 grows by a day for the
+model bake-off. The total moves from about 114 working days to about **126** (≈25 weeks). See
+Section 3.
+
+### What the team needs to decide
+
+1. **Where the model runs.** Recommended: one school machine with a GPU, running Ollama or vLLM,
+   reachable only from the API through an authenticated tunnel. The alternative is a free hosted
+   Qwen endpoint. That is fine for development, but free tiers cap requests per minute and per day
+   well below what a full lab in active mode sends, and some keep prompts. Read the terms before
+   sending anything to one.
+2. **The Free Build default.** Recommended: **Active**, with Quiet one click away. The alternative
+   is On request, which is 1.1's behaviour.
+3. **Which Qwen model.** Not decided in advance. Phase 24 runs a bake-off, and the smallest model
+   that clears the bar wins.
+
+---
+
+## 0.1 What Changed in Version 1.1
+
+Kept as written. Where 1.2 changes something below, 1.2 wins.
 
 Three capabilities were added, and one contradiction that shipped in 1.0 was resolved. Everything
 in Parts A and B stands unless a line below says otherwise.
@@ -103,6 +215,7 @@ Part A produces a **complete, usable, empty application** — students can regis
 | Testing | Vitest + Testing Library + Playwright |
 | Offline | vite-plugin-pwa + Dexie (IndexedDB) |
 | Hosting | Vercel (SPA + API), Neon (database) |
+| AI Coach model | Open-weight Qwen instruct model, self-hosted on Ollama or vLLM, behind an OpenAI-compatible adapter |
 
 ### 1.1.1 Why This Shape
 
@@ -132,6 +245,8 @@ src/
     nodes.ts        # union-find node collapse
     netlist.ts      # graph extraction
     solver/         # MNA DC solver
+    suggestions/    # Phase 26: advisory rules
+    patterns/       # Phase 26: sub-circuit library + recognizer
   render/           # R3F components (visual only)
   components/ui/    # shadcn primitives
   lib/              # api client, utils, constants
@@ -144,6 +259,7 @@ api/
     migrations/     # generated by drizzle-kit, committed
     client.ts       # Neon serverless driver + Drizzle
   middleware/       # session, role guards, error handling
+  ai/               # Part C: digest, provider adapter, grounding, prompts
 shared/
   contracts/        # Zod schemas shared by api/ and src/
 tests/
@@ -174,7 +290,7 @@ tests/
 | `/teach/exercises` | instructor | Exercise authoring list |
 | `/teach/exercises/:id/capture` | instructor | **Learn Mode** |
 | `/teach/reports/:classId` | instructor | Intervention analytics |
-| `/sandbox` | student | **Free Build** — ungraded practice, immediate AI feedback |
+| `/sandbox` | student | **Free Build** — ungraded practice; the AI Coach watches and nudges as you build |
 | `/assignments/:id` | student | Task detail: policy, countdown, attempts left, start |
 | `/teach/classes/:id/assignments` | instructor | Tasks assigned to this class |
 | `/teach/assignments/new` | instructor | **The task builder** — deadline, timer, attempts, grading |
@@ -365,11 +481,39 @@ create table grades (
   overridden_at timestamptz
 );
 
+-- 1.2. One row per Free Build sitting. It holds no board: the board stays in the
+-- browser, exactly as src/features/sandbox/sandbox-page.tsx keeps it. Never joined
+-- into attempts, instructor drill-downs, Phase 18 analytics or Phase 20 numbers.
+create table sandbox_sessions (
+  id uuid primary key default gen_random_uuid(),
+  student_id text references profiles(id) on delete cascade not null,
+  started_at timestamptz default now(),
+  last_active_at timestamptz default now(),
+  coach_level text not null default 'active'
+    check (coach_level in ('off','on_request','active')),   -- the student's own choice
+  coach_calls int not null default 0,        -- model calls made
+  coach_fallbacks int not null default 0,    -- deterministic text served instead
+  coach_skipped int not null default 0       -- triggers dropped: unchanged board, pacing, Quiet
+);
+
+-- 1.2. The ceiling an instructor sets on Free Build for their class. Across a
+-- student's classes the most restrictive value wins, read on the server per request.
+alter table classes add column sandbox_coach text not null default 'active'
+  check (sandbox_coach in ('off','deterministic','active'));
+-- off           = pass/fail only in Free Build, like the Phase 21 control arm
+-- deterministic = Tier 1 and Phase 26 cards and nudges in Phase 15 wording. Never the model
+-- active        = the same, worded by the model, falling back to deterministic
+
 -- One row per generated coaching message. The visibility gate lives here.
 create table ai_feedback (
   id uuid primary key default gen_random_uuid(),
-  attempt_id uuid references attempts(id) on delete cascade not null,
+  -- exactly one owner: an attempt (graded or ungraded) or a Free Build session
+  attempt_id uuid references attempts(id) on delete cascade,
+  sandbox_session_id uuid references sandbox_sessions(id) on delete cascade,
+  check ((attempt_id is null) <> (sandbox_session_id is null)),
   mode text not null check (mode in ('free_build','assignment')),
+  triggered_by text not null default 'run'
+    check (triggered_by in ('run','settle','escalation','submit')),
   status text not null default 'queued'
     check (status in ('queued','ready','failed','skipped')),
 
@@ -380,14 +524,28 @@ create table ai_feedback (
   digest jsonb not null,             -- the deterministic input, archived verbatim
   strengths jsonb,                   -- [{ id, text }]
   issues jsonb,                      -- [{ faultId, text, question }]
+  suggestions jsonb,                 -- 1.2: [{ suggestionId, text }]
   next_step text,
 
-  model text,                        -- e.g. 'claude-opus-5'
+  -- 1.2, active coaching. Null on Run summaries and on assignments
+  revision int,                      -- the board revision this message speaks to
+  board_hash text,                   -- canonical netlist + finding ids; the change gate
+  focus_id text,                     -- the one fault or suggestion the message is about
+  hint_level int check (hint_level between 1 and 3),   -- question, narrowed hint, fix
+
+  provider text,                     -- e.g. 'ollama', 'vllm'
+  model text,                        -- the exact model tag served, e.g. 'qwen3:8b'
   prompt_version text,               -- bump when the system prompt changes
   input_tokens int,
   output_tokens int,
+  latency_ms int,
   grounding_ok boolean,              -- did the output pass the grounding check?
   fell_back boolean not null default false,   -- true = deterministic text was served
+
+  -- 1.2, what happened next. Stands in for Phase 17 events in Free Build
+  shown_at timestamptz,
+  resolved_at timestamptz,           -- the focus finding left the board
+  rating smallint check (rating in (-1, 1)),   -- thumbs down / up
   created_at timestamptz default now()
 );
 
@@ -396,7 +554,12 @@ create index assignments_due_idx on assignments(due_at) where published;
 create index attempts_assignment_idx on attempts(assignment_id);
 create index grades_assignment_idx on grades(assignment_id);
 create index ai_feedback_attempt_idx on ai_feedback(attempt_id);
+create index ai_feedback_sandbox_idx on ai_feedback(sandbox_session_id);
+create index sandbox_sessions_student_idx on sandbox_sessions(student_id);
 ```
+
+Free Build coaching rows are kept for 90 days, which is long enough to tune the Coach against,
+and then a sweep deletes them. A doodle's coaching deserves no longer a life than the doodle.
 
 ### The rubric
 
@@ -450,7 +613,7 @@ much cheaper to do in its original phase than to retrofit.
 | **5** — Student dashboard | The dashboard groups by **assignment**, not by exercise. Each card carries a due date, a countdown when one is within 48 hours, attempts remaining, and the score once released. Add a Free Build entry point beside the assigned work |
 | **6** — Instructor shell | Add the assignment list and the task-builder form as a **shell** here: every field rendered and validated, saving to the real table, with nothing enforced yet. Phase 22 wires enforcement. Building the form early means the Phase 8 usability pre-test can put it in front of a real instructor, which is exactly the feedback that is expensive to get late |
 | **7** — Workspace shell | The header timer becomes a **countdown** when the attempt has an `expires_at`, and stays an elapsed clock otherwise. Design both states now. Add the feedback panel's three withheld states from Phase 25 as static layouts |
-| **13/14** — Diagnostics | Tier 1 stays in the browser. **Tier 2 moves to the API** behind `POST /api/attempts/:id/scan`, per Section 0.0. The comparator itself is unchanged and still a pure function; only its call site moves |
+| **13/14** — Diagnostics | Tier 1 stays in the browser. **Tier 2 moves to the API** behind `POST /api/attempts/:id/scan`, per Section 0.1. The comparator itself is unchanged and still a pure function; only its call site moves |
 | **17** — Telemetry | Add event types `assign_start`, `timer_expire`, `submit_auto`, `grade`, `ai_request`, `ai_fallback`, `feedback_view`. Fault-isolation time must remain computable for the control group, which has no AI Coach at all |
 | **20** — Evaluation harness | Unchanged, and deliberately so. It imports the comparator directly and never calls the API or the model. Add a second harness for the **grader**: the same 150 fixtures, asserting that scores are deterministic and monotonic in edit distance |
 
@@ -474,6 +637,19 @@ result about presentation.
 
 **Feedback release must be identical across all three groups** during the pilot, or the groups
 were not doing the same task. Set every pilot assignment to `after_due`.
+
+**Free Build must follow the arm too.** Active coaching exists outside assignments, so a control
+student could practise in the sandbox with the model's help and quietly stop being a control. The
+class-level `sandbox_coach` setting closes that for the length of the pilot:
+
+| Group | `sandbox_coach` |
+|---|---|
+| Control | `off` — pass/fail only, the same as its assignments |
+| Experimental A | `deterministic` — cards and nudges, no model |
+| Experimental B | `active` |
+
+`sandbox_sessions` counts tell the write-up how much each group practised, which is a confound the
+panel will ask about.
 
 ---
 
@@ -893,6 +1069,71 @@ Your core algorithmic contribution.
 
 ---
 
+## Phase 26 — Suggestion Rules & Pattern Recognizer
+**Duration:** 5 days
+Added in 1.2. Numbered 26 so that no existing reference moves. It **runs here**, after Phase 16,
+because it reads the solver's output. Pure logic in `board/`. No UI and no model.
+
+A fault says the circuit is wrong. A suggestion says it works, or will, but could be better. A
+student in Free Build needs the second far more often than the first, because most free builds
+are not broken. They are unfinished, or naive. This phase is what lets the Coach say something
+useful about them without making anything up.
+
+**Suggestion rules.** They are written for the parts actually on the Free Build shelf (resistors,
+a red LED, two capacitors, a 2N2222, a 1N4148, jumpers). Each is a pure function returning
+`{ rule, nodeIds, rowLabels, detail, advice } | null`, the same discipline as Phase 13.
+
+| Rule | Fires when | Reads |
+|---|---|---|
+| `led_dim` | LED forward current is below ~2 mA. A 10 kΩ on a red LED at 5 V gives about 0.3 mA, which is barely a glow | solver |
+| `led_margin` | LED current is above ~15 mA. It works now and dies early | solver |
+| `resistor_hot` | A resistor dissipates more than half its ¼ W rating | solver |
+| `leds_share_resistor` | Two or more LEDs in parallel share one series resistor | topology |
+| `base_no_resistor` | A transistor base connects straight to a supply rail | topology |
+| `collector_no_load` | A transistor collector connects straight to the supply with nothing to switch | topology |
+
+The thresholds live in a config file beside the Phase 14 cost table and are documented for the
+appendix. The rule set grows with the shelf: putting an IC on it brings decoupling and
+floating-input rules with it.
+
+**Pattern recognizer.** It works from a small library of sub-circuits, each a tiny netlist:
+
+| Pattern | Values it reports | Example "try next" |
+|---|---|---|
+| LED with series resistor | LED current | Swap the 220 Ω for the 1 kΩ. What happens to the brightness, and why? |
+| Voltage divider | Output voltage | Put the LED on the tap. Is the tap still at the voltage you worked out? |
+| RC network | Time constant τ | Swap the 100 nF for the 10 µF. What happens to τ? |
+| Transistor switch | Base and collector current, saturated or not | What does the base resistor protect? |
+| Diode in series | Forward drop | Turn the diode around. Predict first, then try |
+
+Every "try next" idea is written by the team, reviewed by an instructor, bilingual, and carries an
+id. The model may pick one and word it. It may not write its own.
+
+**Tasks**
+1. The six rules, each with its own test file
+2. The `suggestion` severity in the Phase 13 registry, so one evaluation pass returns both faults
+   and suggestions
+3. The pattern library in `board/patterns/`: five patterns as JSON netlists, each with the solver
+   values it reports and two or three curated try-next ideas in English and Filipino
+4. The recognizer. It finds every instance of every pattern on the board and reports rows and
+   values. A pattern matches when all of its parts and connections are present. Extra connections
+   on its outer nodes are allowed; extra connections inside it are not. On a 20-component board a
+   plain search over candidate mappings is fast enough, so it needs no clever algorithm
+5. Negative cases, the same idea as Phase 14's headline metric: equivalent alternatives draw
+   nothing. That covers the resistor on either side of the LED, a divider's resistors swapped in
+   position, and a part moved to an equivalent row
+
+**DoD**
+- [ ] Each rule has ≥5 positive and ≥5 negative test cases
+- [ ] No suggestion fires on a correctly built reference circuit
+- [ ] The resistor on either side of an LED is recognised as the same pattern, with the same values
+- [ ] Every pattern is recognised when built on different rows, with identical values
+- [ ] Every try-next idea has been reviewed by an instructor for safety, in both languages
+- [ ] Rules and recognizer together run in under 10 ms on a 20-component board
+- [ ] Nothing in `board/` imports a model client. This is the React/Three.js rule, extended
+
+---
+
 ## Phase 17 — Telemetry
 **Duration:** 3 days
 
@@ -984,9 +1225,13 @@ This phase produces your results chapter. Do not skip it or do it by hand.
 # PART C — Assignments, Grading & AI Coach
 
 Part C is what turns a practice tool into something an instructor can actually run a course on.
-It starts only when Part B's comparator is real and tested, because both the grade and the AI
-Coach are functions of the comparator's output. Building either one on top of a diagnostic engine
-you do not yet trust produces a grade you cannot defend.
+It starts only when Part B's comparator is real and tested, because the grade and the Coach on
+assigned tasks are functions of the comparator's output, and the Free Build Coach is a function of
+Tier 1, the solver and Phase 26. Building any of them on top of a diagnostic engine you do not yet
+trust produces a grade you cannot defend and feedback you cannot stand behind.
+
+**Order in 1.2:** 22 → 23 → 24 → 27 → 25. Phase 27 follows Phase 24 directly, while the Coach is
+fresh in everyone's head.
 
 ---
 
@@ -1089,100 +1334,232 @@ The instructor already captured the correct circuit in Learn Mode. The mark foll
 
 ---
 
-## Phase 24 — AI Coach on Free Build
-**Duration:** 5 days
+## Phase 24 — AI Coach Core, and Run in Free Build
+**Duration:** 6 days
 
-Free Build is `/sandbox`: no exercise, no grade, no deadline. A student builds whatever they like
-and presses **Run**. This is where the Coach speaks immediately, because there is nothing to cheat
-on.
+Free Build is `/sandbox`: no exercise, no grade, no deadline. A student builds whatever they like.
+This phase builds the Coach itself, running on a self-hosted Qwen model, and wires it to the
+**Run** button for a full summary. Phase 27 then makes it active.
 
 ### What the Coach is, and what it is not
 
 The Coach **does not diagnose**. It never decides whether a circuit is right, never locates a
 fault, never assigns a mark, and never sees the golden netlist. The deterministic engine does all
-of that first and hands the Coach a finished result. The Coach's only job is to say that result in
-language a first-year student wants to read.
+of that first and hands the Coach a finished result. In Free Build it does not even choose what
+to talk about: the digest names the focus. The Coach's only job is to say that result in language
+a first-year student wants to read.
 
 This split is not squeamishness about language models. It is what keeps the project's central
 claim intact: the accuracy numbers in the results chapter come from a deterministic function that
 returns the same answer every time it is run. Put a model in that path and the numbers stop being
 reproducible, and the first panelist to ask "would it say the same thing tomorrow?" has taken the
-contribution apart.
+contribution apart. The split is also what makes a small free model good enough. The hard part
+has already been done by code the model cannot overrule.
 
 ```
 board state
     │
     ▼
-Tier 1 rules (browser) ─┐
-Tier 2 comparator (API) ─┼──▶  DIAGNOSTIC DIGEST  ──▶  AI Coach  ──▶  student reads it
-DC solver (browser) ────┘         (facts, JSON)         (words)
-                                       │
-                                       └──▶  grade()  ──▶  score
+Tier 1 rules ───────────┐
+DC solver ──────────────┤
+Phase 26 suggestions ───┼──▶  DIAGNOSTIC DIGEST  ──▶  Qwen  ──▶  grounding  ──▶  student
+Tier 2 comparator ──────┘       (facts, JSON)        (words)      check          reads it
+  (assignments only)                  │                             │
+                                      │                     fail ───┴──▶ deterministic text
+                                      └──▶  grade()  ──▶  score   (assignments only)
 ```
 
 The digest feeds the grade and the Coach alike. The grade never passes through the model.
 
 **Tasks**
-1. Install `@anthropic-ai/sdk`. The key lives in `ANTHROPIC_API_KEY` on the server only — add it
-   to `.env.example` and confirm it never appears in the client bundle
-2. `api/ai/digest.ts` — build the digest from the diagnostic report. A fixed, small shape:
+1. **The model server.** Stand up Ollama (simplest) or vLLM (better under concurrent load) on the
+   machine the team chose, and pull two or three Qwen instruct candidates in the 4–9B range at
+   4-bit quantization. Use a non-thinking instruct variant, or switch thinking off: the job is
+   wording, and thinking tokens are latency the student sits through. Expose the server to the
+   API only, behind a shared secret, through an authenticated tunnel. Its URL, model tag and secret
+   live in `COACH_BASE_URL`, `COACH_MODEL` and `COACH_API_KEY` on the server only. Add all three to
+   `.env.example`. Most Qwen open-weight checkpoints are Apache 2.0, but confirm the licence of the
+   exact one you ship
+2. **`api/ai/provider.ts` — the adapter.** One function: messages in, parsed JSON out, with a hard
+   timeout and an `AbortSignal`. It speaks OpenAI-compatible `/v1/chat/completions`. Ask for
+   schema-constrained JSON where the server supports it (Ollama's `format`, vLLM's guided JSON),
+   and **validate with Zod regardless**. A small model will sometimes return malformed JSON, and
+   malformed output means a fallback, never a crash
+3. **`api/ai/digest.ts` — the digest**, now in two shapes. On assignments it is unchanged from
+   1.1. In Free Build it is built from Tier 1, the DC solver and Phase 26, with a `focus` chosen
+   by code:
 
 ```jsonc
 {
-  "context":  { "mode": "free_build", "objective": "..." },
-  "verdict":  "correct" | "faulted" | "substantially_different",
-  "correct":  [{ "id": "c1", "what": "resistor value", "detail": "330Ω, right for 10mA at 5V" }],
-  "faults":   [{ "id": "f1", "class": "open_circuit", "rows": ["14","15"],
-                 "cause": "...", "guidingQuestion": "...", "severity": "blocking" }],
-  "process":  { "durationMs": 742000, "hintsUsed": 1, "faultsSelfResolved": 2 }
+  "context":     { "mode": "free_build", "trigger": "settle", "revision": 17,
+                   "hintLevel": 1, "locale": "fil" },
+  "verdict":     "clean" | "issues",
+  "focus":       "f1",
+  "faults":      [{ "id": "f1", "class": "floating_lead", "rows": ["14"], "severity": "advisory",
+                    "cause": "...", "guidingQuestion": "...", "hint": "...", "correction": "..." }],
+  "suggestions": [{ "id": "s1", "rule": "led_dim", "rows": ["22"],
+                    "detail": "LED current 0.3 mA", "advice": "..." }],
+  "recognized":  [{ "id": "p1", "pattern": "voltage_divider", "rows": ["10", "20"],
+                    "values": { "vout": "2.5 V" },
+                    "tryNext": [{ "id": "p1.t1", "text": "..." }] }],
+  "correct":     [{ "id": "c1", "what": "LED orientation", "detail": "anode toward the supply" }],
+  "process":     { "durationMs": 742000, "hintsUsed": 1, "faultsSelfResolved": 2 }
 }
 ```
 
-3. `api/ai/coach.ts` — one call to `claude-opus-5`. Settings that matter:
-   - `output_config: { format: ... }` — structured outputs, so the response is always
-     `{ strengths[], issues[], nextStep }` and never prose that has to be parsed
-   - `output_config: { effort: "low" }` — this is short, tightly-specified writing. Sweep low
-     against medium on real digests during this phase and keep whichever reads better
-   - `thinking: { type: "adaptive" }` — the default on Opus 5; leave it on
-   - `cache_control: { type: "ephemeral" }` on the system prompt, which is identical on every
-     request and is the bulk of the input
-   - Streaming on the free-build path, so text appears as it is written
+   **The server builds the digest from the board state itself**, using the same `board/` functions
+   the browser runs. It never accepts findings computed by the client. **The digest carries no
+   name, email, student number or id.** The model is never told who it is talking to.
+   **Focus order:** blocking faults, then advisory faults, then suggestions, then recognised
+   patterns. Ties go to the finding nearest the supply, so the most upstream problem comes first,
+   which is the same rule Phase 14 follows
 4. **The system prompt is a contract**, versioned in `api/ai/prompts/coach.v1.ts` and recorded in
    `ai_feedback.prompt_version`. It states: you are given a completed analysis; you may only
-   describe faults present in `faults[]` and strengths present in `correct[]`; you may not add,
-   merge, rank or invent any; never state the fix outright when a guiding question is supplied;
-   name at least one genuine strength; 150 words or fewer; second person; no blame
-5. **The grounding check** — the safety mechanism that makes this defensible. After the model
-   responds, verify that every fault id and every row label it cites exists in the digest. Any
-   invention fails the check, sets `grounding_ok` to false, and serves the deterministic template
-   text instead. The student sees good feedback either way; the difference is only whether it was
-   written by the model or assembled from Phase 15's strings
-6. **Fallback path.** No API key, an outage, a rate limit, a refusal, or a failed grounding check
-   all resolve to the same thing: the Phase 15 deterministic cause-and-question text, rendered in
-   the same card. `fell_back` records it. The trainer must be fully usable with the model switched
-   off — a lab with no internet still teaches
-7. Rate limit per student, and a monthly project ceiling with a kill switch, so a runaway loop
-   cannot spend the budget
-8. Free Build UI: a **Run** button, a result card with strengths first, then issues, then one next
-   step. Bilingual output (EN / Filipino) driven by the profile locale
-9. Log tokens and the model to `ai_feedback` on every call
+   describe faults in `faults[]`, suggestions in `suggestions[]`, patterns in `recognized[]` and
+   strengths in `correct[]`; you may not add, merge, rank or invent any; talk about the focus item
+   and mention others only as a count; at `hintLevel` 1 ask the guiding question, at 2 give the
+   hint, and never state the correction below 3; name at least one genuine strength in a Run
+   summary; 60 words for a nudge, 150 for a summary; second person; no blame; write in the digest's
+   locale. Keep the prompt byte-identical across requests and put it first. vLLM's prefix caching
+   and llama.cpp's prompt cache then reuse it instead of re-reading it every call
+5. **The grounding check**, the safety mechanism that makes this defensible. It runs on the
+   **complete** message, **before any of it is sent to the client**:
+   - every fault, suggestion, pattern and try-next id it cites exists in the digest
+   - every row label it mentions exists in the digest
+   - **every electrical quantity** (a number with Ω, V, A, mA, W or F) appears in the digest. This
+     is the check that stops "try a 10 Ω resistor"
+   - **no spoilers:** below `hintLevel` 3, the message contains no row or value that appears only
+     in the correction
+   - its `focusId` equals the digest's `focus`
 
-**Cost.** A digest plus the cached system prompt runs roughly 1,500 input and 250 output tokens.
-At Opus 5 rates that is about **$0.014 per feedback**, and prompt caching cuts the input share
-substantially after the first call in a window. A 30-student pilot at ten exercises each is about
-**$4**. Cost is not a reason to compromise the design here. If it ever becomes one, the model is a
-single constant and `claude-sonnet-5` or `claude-haiku-4-5` are drop-in — but that is a decision
-to make on measured quality, not in advance.
+   Any failure sets `grounding_ok` to false and serves the deterministic template text instead.
+   The student sees good feedback either way. The only difference is whether the model wrote it or
+   it was assembled from Phase 15's strings
+6. **Fallback path.** No model server, an outage, a timeout, malformed JSON or a failed grounding
+   check all resolve to the same thing: the Phase 15 deterministic text, rendered in the same card.
+   `fell_back` records it. **Latency is a fallback condition too.** If the model has not answered
+   inside the budget (4 s for a nudge, 8 s for a Run summary), abort the call and serve the
+   deterministic text. The trainer must be fully usable with the model switched off, because a lab
+   with no internet still teaches
+7. **The model bake-off.** Run each candidate over the 50-fixture grounding set in both languages,
+   on the hardware the pilot will use. Record for each: grounding pass rate, malformed-output rate,
+   median and 95th-percentile latency, and a blind readability rating from two teammates who do
+   not know which model wrote what. Keep the **smallest** model that passes grounding on ≥90% of
+   fixtures and stays inside the latency budget at p95. Write it up in `docs/coach-model.md`. That
+   file is the answer when a panelist asks "why this model?"
+8. Rate limit per student, and a concurrency cap on the model server. Requests past the cap wait
+   briefly and then fall back. A full lab must degrade to deterministic text, not freeze the panel
+9. Free Build UI: a **Run** button giving the full summary, with strengths first, then issues, then
+   one next step. It is released only once complete, like every other model message. Bilingual
+   output follows the profile locale
+10. Log provider, model tag, token counts from the response's `usage`, and latency to `ai_feedback`
+    on every call
+
+**Cost.** Nothing per request. The cost moves to hardware: an 8B model at 4-bit needs roughly
+5–6 GB of GPU memory, which one mid-range consumer graphics card provides. A CPU-only machine can
+run it, but not at the latency active coaching needs. If the school has no such machine, a free
+hosted tier covers development while the team finds one. The bake-off numbers also say exactly
+what any other endpoint would have to beat.
 
 **DoD**
-- [ ] Pressing Run on a broken free build returns coaching within 3 seconds
-- [ ] The feedback names a real strength every time, including on a badly broken board
-- [ ] Every fault mentioned exists in the digest — asserted by an automated grounding test over 50 fixtures
-- [ ] Deleting `ANTHROPIC_API_KEY` degrades to deterministic text with no visible error
-- [ ] A digest with `verdict: correct` produces praise and no invented criticism
-- [ ] `ANTHROPIC_API_KEY` does not appear in the built client bundle — grep to confirm
-- [ ] Filipino output is idiomatic, checked by a native speaker, not machine round-tripped
-- [ ] Token usage and model are recorded for every call
+- [ ] Pressing Run on a broken free build shows a summary within 8 seconds, or deterministic text if the model is slower
+- [ ] The summary names a real strength every time, including on a badly broken board
+- [ ] Every fault, suggestion, row and electrical value mentioned exists in the digest — asserted by an automated grounding test over 50 fixtures
+- [ ] Model text that failed grounding never reaches the client — asserted on the raw response body
+- [ ] Stopping the model server degrades to deterministic text with no visible error
+- [ ] A digest with `verdict: clean` produces praise and no invented criticism
+- [ ] `COACH_BASE_URL`, `COACH_MODEL` and `COACH_API_KEY` do not appear in the built client bundle — grep to confirm
+- [ ] No request to the model carries a student's name, email, student number or id — asserted on the outgoing payload
+- [ ] Filipino output is idiomatic, checked by a native speaker, not machine round-tripped. If the chosen model cannot manage it, Filipino is served from the deterministic strings and `docs/coach-model.md` says so
+- [ ] `docs/coach-model.md` records the bake-off and the model chosen
+- [ ] Provider, model, tokens and latency are recorded for every call
+
+---
+
+## Phase 27 — Active Coaching in Free Build
+**Duration:** 6 days
+Added in 1.2. Numbered 27 so that no existing reference moves. It **runs straight after
+Phase 24**, before Phase 25.
+
+Phase 24 built the Coach. This phase makes it watch. Generating a message is the easy part. The
+hard part is knowing when to stay quiet. A coach that comments on every dropped lead is a nag,
+and students switch nags off. The interaction design is the deliverable here, more than the code.
+
+```
+edit ─▶ board settles ─▶ changed in a way that matters? ── no ──▶ nothing
+                                    │ yes
+                                    ▼
+             browser: Tier 1 + solver + Phase 26          (instant, no network)
+                  │                           │
+        deterministic card             POST /api/sandbox/:sessionId/coach
+          shows at once                       │
+                                   server rebuilds the digest from the board
+                                   Qwen (≤ 4 s) ─▶ grounding check
+                                              │
+                            pass: the card's text is replaced by the Coach's
+                            fail or late: the card stays as it is
+```
+
+**Tasks**
+1. **Coach level.** The student picks Off, On request or Active in the feedback panel. The default
+   is Active. The class's `sandbox_coach` sets the ceiling, and across a student's classes the most
+   restrictive one wins. The server reads both on every request, never trusting the client's copy
+2. **Settle detection.** A board revision is settled once 2.5 s pass with no edit, and only while
+   Phase 13's construction-progress heuristic says no lead is in hand. Nothing is sent for a
+   revision that has not settled
+3. **Change gate.** Hash the canonical netlist (Phase 11) together with the set of finding ids. If
+   the hash matches the last coached revision, send nothing. Moving a part to an equivalent row
+   changes neither, so it costs no call. This is Phase 11's headline property earning its keep a
+   second time
+4. **Pacing.** At most one unsolicited message every 20 s. At most one message asks for attention
+   at a time, and older ones collapse into a history. A per-student daily cap on model calls;
+   past it, deterministic nudges only
+5. **The endpoint.** `POST /api/sandbox/:sessionId/coach` takes the board state and its revision
+   number. The server checks that the session is the caller's own, then applies the class
+   ceiling. **If the caller has an open attempt on an assignment whose `live_diagnostics` is `off`,
+   it returns `{ state: "paused", reason: "exam_open" }` and does nothing else.** The sandbox must
+   not become a second screen for an exam. Otherwise it rebuilds the digest from the board, calls
+   the model, checks grounding, and returns
+6. **Stale messages are never shown.** When a newer revision settles, the client aborts the old
+   request and the server aborts the model call. No message is ever displayed for a board the
+   student has already changed
+7. **Automatic escalation.** A finding that stays on the board climbs the Phase 15 ladder on its
+   own. Rung 1, the guiding question, comes when it is first raised. Rung 2, the narrowed hint,
+   comes after 60 s, or after 3 more settled revisions with the finding still present. Rung 3, the
+   explicit fix, is only **offered**, as a "Show me the fix" button, and never shown unasked. Each
+   rung is logged
+8. **Resolution.** When a coached finding leaves the board, the panel confirms it at once in
+   deterministic text ("Fixed — row 14 now reaches row 15"). That costs no model call. It sets
+   `resolved_at` on the message that raised the finding. Time from shown to resolved is Free
+   Build's counterpart of isolation time
+9. **The panel.** The Coach's thread sits in the feedback panel, newest first. A message whose
+   revision is out of date greys out and says "You've changed the board since this." Each message
+   has **Show me** (camera to the rows, from Phase 15) and a thumbs up or down. The panel has
+   **Quiet**, which pauses Active for this session in one click. A screen reader announces each
+   message once and complete, through a `polite` live region: never token by token, never
+   `assertive`. Reduced motion means no typing animation
+10. **Deterministic floor.** When the model is off, the ceiling is `deterministic`, or the server
+    cannot be reached, the same pipeline runs entirely in the browser and speaks Phase 15
+    strings. The student sees the same panel either way
+11. **Load test.** 35 simulated students building at once against the pilot hardware. The pass
+    condition is not "the model keeps up". It is "every student gets a nudge within budget,
+    model-written or deterministic"
+12. **Usability check.** Five students, 20 minutes of Free Build each, thinking aloud. Each rates
+    the Coach from annoying to helpful on a 5-point scale. Tune the settle delay, the pacing and
+    the escalation timings from what you watch, not from what seems reasonable. Record everything
+    in `docs/usability-coach.md`
+
+**DoD**
+- [ ] Moving a part to an equivalent position makes no model call — asserted by a test that counts calls
+- [ ] No message is shown for a revision the student has already changed — e2e test against a deliberately slow mock model
+- [ ] When a fault appears, its deterministic card is on screen at once, and the Coach's wording follows within 4 s at p50 on the pilot hardware, or the card stays deterministic
+- [ ] Rung 1 and rung 2 messages never contain the fix — automated no-spoiler test over the fixture set
+- [ ] While the student has an exam-mode attempt open, the sandbox Coach is paused — tested against the API with curl, not only in the UI
+- [ ] A class ceiling of `off` suppresses every nudge, model-written and deterministic
+- [ ] With the model server stopped, Active still nudges, deterministically, with no visible error
+- [ ] Load test passes: 35 simulated students, every nudge within budget
+- [ ] A screen reader announces each message once, complete
+- [ ] ≥4 of 5 usability participants rate the Coach helpful, and no severity-1 "nagging" finding is left open
 
 ---
 
@@ -1258,21 +1635,25 @@ So on an assignment the Coach runs at submit and the text sits in the database, 
 | Part | Phases | Working days |
 |---|---|---|
 | A — Student Shell | 0–8 | 35 |
-| B — Diagnostic Engine | 9–20 | 50 |
-| C — Assignments, Grading & AI Coach | 22–25 | 19 |
+| B — Diagnostic Engine | 9–20, 26 | 55 |
+| C — Assignments, Grading & AI Coach | 22–25, 27 | 26 |
 | Evaluation | 21 | 10 |
-| **Total** | | **~114 days (≈23 weeks)** |
+| **Total** | | **~126 days (≈25 weeks)** |
 
 Add 20% buffer. Phases 10 and 14 are still the most likely to overrun.
 
-**Phase 21 runs last**, after Part C, despite its number — the pilot needs assignments, grading
-and the Coach in place to measure the three arms in Section 2.10. The numbering is kept as it is
-so that `docs/phase-status.md` and every existing reference stay valid.
+**Run order is not number order.** Phase 26 runs in Part B right after Phase 16. Part C runs
+22 → 23 → 24 → 27 → 25. **Phase 21 runs last**, after Part C, despite its number, because the
+pilot needs assignments, grading and the Coach in place to measure the three arms in Section 2.10.
+Numbers are only ever appended, so that `docs/phase-status.md` and every existing reference stay
+valid.
 
 **If the schedule slips**, cut in this order: Phase 25's manual release mode, then Phase 24's
-bilingual output, then Phase 23's CSV export. Do not cut the Phase 25 release gate. An assignment
-system that leaks corrections during a graded task is worse than no assignment system, because it
-produces numbers that look like results and are not.
+bilingual output, then Phase 23's CSV export, then Phase 27's automatic escalation (nudges stay,
+and the hint ladder goes back to clicks), then Phase 26's pattern recognizer (the suggestion rules
+stay). Do not cut the Phase 25 release gate, the Phase 24 grounding check, or the Phase 27 exam
+pause. An assignment system that leaks corrections during a graded task is worse than no
+assignment system, because it produces numbers that look like results and are not.
 
 ---
 
@@ -1291,9 +1672,13 @@ produces numbers that look like results and are not.
 | Panel objects "this is just Tinkercad" | Defense risk | Lead with the fault taxonomy and isomorphism matcher as the contribution |
 | Scope creep into AC/transient analysis | Missed deadline | DC-only is written into scope; refuse additions |
 | **AI feedback reaches a student mid-task** | **Invalidates every grade and the pilot itself** | **Server-side `visible_at` gate; text never sent to a client that may not show it; integrity tests in Phase 25 DoD** |
-| **The model invents a fault the engine never found** | **Student chases a problem that is not there; trust gone** | **Grounding check rejects any fault or row not in the digest; falls back to deterministic text; 50-fixture automated test** |
-| **Panel objects "the AI is doing the diagnosis"** | **Defense risk — the contribution looks like a wrapper** | **Architecture diagram showing the model strictly downstream of the digest; Phase 20 accuracy numbers computed with the model absent; Coach can be switched off entirely and the trainer still works** |
-| **Anthropic API outage or exhausted budget during the pilot** | **Sessions stall mid-evaluation** | **Deterministic fallback path is the same code path, exercised in the Phase 24 DoD; monthly ceiling with a kill switch; pilot runs on `after_due` so no session ever waits on a live call** |
+| **The model invents a fault, a value or a fix the engine never produced** | **Student chases a problem that is not there, or builds something harmful; trust gone** | **Grounding check on the complete message before the client sees it: ids, rows, every electrical quantity, no spoilers; falls back to deterministic text; 50-fixture automated test** |
+| **Panel objects "the AI is doing the diagnosis"** | **Defense risk — the contribution looks like a wrapper** | **Architecture diagram showing the model strictly downstream of the digest; the digest, not the model, picks what to talk about; Phase 20 accuracy numbers computed with the model absent; Coach can be switched off entirely and the trainer still works** |
+| **Model server down, slow or overloaded during a lab** | **Nudges stall; sessions feel broken** | **Latency budget is itself a fallback condition; concurrency cap; deterministic floor runs in the browser; 35-student load test in Phase 27; pilot assignments run on `after_due`, so no graded session ever waits on the model** |
+| **A small free model writes poorly, or writes poor Filipino** | **Coach reads worse than the deterministic text it replaces** | **Phase 24 bake-off chooses on measured grounding, latency and blind readability; grounding failures fall back; Filipino can fall back to deterministic strings, documented** |
+| **Active coaching feels like nagging** | **Students switch it off; the usability score falls** | **Settle detection; change gate on the canonical netlist; one message per 20 s; Quiet toggle; Phase 27 usability check with a pass threshold** |
+| **Sandbox used as a second screen during an exam** | **Exam-mode integrity is gone** | **Sandbox Coach pauses on the server while the student has an exam-mode attempt open; tested with curl** |
+| **A free hosted endpoint rate-limits or keeps prompts** | **Lab stalls; student data leaves the school** | **Self-host for the pilot; hosted free tiers for development only; the digest carries no identity at all** |
 | **Auto-grade disputed by a student** | **Instructor loses confidence in the whole system** | **`grade()` is pure and re-runnable on the stored digest; the breakdown shows every line; override with a mandatory note keeps both numbers** |
 | **Client clock manipulation to beat a timer** | **Timed assessments meaningless** | **Every deadline and expiry is a server timestamp; the client only counts down to one; server auto-submits past `expires_at`** |
 
@@ -1303,22 +1688,27 @@ produces numbers that look like results and are not.
 
 1. `board/` never imports React or Three.js.
 2. No fault is ever communicated by color alone.
-3. The golden netlist never reaches a student client, and no database credential or API key ever
-   reaches any client.
+3. The golden netlist never reaches a student client, and no database credential, API key or model
+   server secret ever reaches any client.
 4. The diagnostic engine is deterministic and pure. Tier 1 and the DC solver run in the browser;
    Tier 2 runs on the API because it needs the golden netlist. The API never *decides* anything a
    pure function could not — it only runs those functions where the data is.
 5. Every diagnostic rule is a pure, unit-tested function.
 6. **No generative AI in the diagnostic path.** The model receives a completed diagnostic digest
    and writes prose. It never determines whether a circuit is correct, never locates or classifies
-   a fault, never computes a grade, and never sees the golden netlist. Every number in the results
-   chapter is produced with the model absent.
-7. **Every AI output is grounded.** Any fault, row or claim not present in the digest fails the
-   grounding check and the deterministic text is served instead.
+   a fault, never computes a grade, and never sees the golden netlist. It does not choose what to
+   talk about either: the digest names the focus. Every number in the results chapter is produced
+   with the model absent.
+7. **Every AI output is grounded before the student sees any of it.** Any fault, row, value or
+   claim not present in the digest fails the grounding check, and the deterministic text is served
+   instead.
 8. **The trainer is fully usable with the AI switched off.** The Coach is an improvement to how
    feedback reads, never a dependency for feedback existing.
 9. **On a graded task, no feedback reaches the student before the assignment releases it** — and
-   the gate is server-side, because a client-side gate is not a gate.
+   the gate is server-side, because a client-side gate is not a gate. Active coaching never runs on
+   assessed work, and it pauses in Free Build while an exam-mode attempt is open.
 10. **Deadlines, timers and attempt caps are enforced by the server.** The client displays them; it
     never decides them.
-11. A phase with unchecked DoD boxes is not finished.
+11. **The model is never told who the student is.** No name, email, student number or id is ever
+    part of a model request.
+12. A phase with unchecked DoD boxes is not finished.

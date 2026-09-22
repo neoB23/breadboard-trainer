@@ -11,6 +11,11 @@ GitHub) rather than on code.
 `/dashboard` has since been built out past what Phase 3 needed of it — see
 [The dashboard](#the-dashboard) below.
 
+**Plan moved to version 1.2** (21 September 2026). We stay on the breadboard, and the
+lighting-circuits pivot was not adopted. The Free Build Coach becomes active and runs on a
+self-hosted Qwen model. Two phases are new: 26 (suggestion rules and pattern recognizer, run after
+Phase 16) and 27 (active coaching, run after Phase 24). Nothing built so far is affected.
+
 ---
 
 ## Phase 0 — Project Setup ✅

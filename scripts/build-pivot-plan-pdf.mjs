@@ -27,7 +27,7 @@ const outFile = resolve(outDir, 'pivot-plan.pdf')
 const footer = `
   <div style="width:100%;padding:0 15mm;font:400 8pt 'Segoe UI',sans-serif;color:#667085;
               display:flex;justify-content:space-between;">
-    <span>Lighting circuits pivot plan &middot; proposal v1</span>
+    <span>Lighting circuits pivot plan &middot; not adopted</span>
     <span class="pageNumber"></span>
   </div>`
 

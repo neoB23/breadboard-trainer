@@ -1,7 +1,9 @@
 # Pivot Plan — From Breadboard to Lighting Circuits
 
-**Status:** proposal, for the team to accept or reject before any code moves
-**Replaces:** the domain half of [`build-plan.md`](build-plan.md). Parts A and C of that plan stand as written.
+**Status:** **not adopted** (21 September 2026). The team is staying on the breadboard. What
+changed instead is in [`build-plan.md`](build-plan.md) version 1.2: an active AI Coach in Free Build.
+This file is kept for the record and replaces nothing.
+**Would have replaced:** the domain half of [`build-plan.md`](build-plan.md).
 **Date:** 18 September 2026
 
 ---

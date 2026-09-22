@@ -1,6 +1,7 @@
 import type { Bom } from '@shared/contracts'
 
 import { assignRefs, bomFullyPlaced, nodeOf, pinName, type NodeId, type PlacedPart } from './model.ts'
+import { UnionFind } from './union-find.ts'
 
 /**
  * Net extraction — the live half of what the landing page demonstrates.
@@ -20,8 +21,12 @@ import { assignRefs, bomFullyPlaced, nodeOf, pinName, type NodeId, type PlacedPa
  * That is the right fidelity for a placement trainer and the wrong one for a
  * simulator, and the circuit solver that knows the difference is Phase 16's.
  * The one electrical judgement made anyway is the classic first-lab mistake:
- * an LED wired straight across the rails with nothing to limit current gets a
- * warning, because every reference this product has would say the same.
+ * an LED with nothing to limit its current gets a warning, because every
+ * reference this product has would say the same. "Nothing to limit it" means
+ * both of its legs reach their rails without passing through a resistor —
+ * wire, other LEDs, diodes and transistors do not count as a limit, so two
+ * LEDs in series across the rails are both flagged, and one behind a resistor
+ * anywhere in its path is not.
  * ---------------------------------------------------------------------------
  */
 
@@ -62,35 +67,6 @@ export interface BoardAnalysis {
    * What "Hand in" reports as `completed`.
    */
   complete: boolean
-}
-
-/* -------------------------------------------------------------------------- */
-/* Union-find over wire                                                       */
-/* -------------------------------------------------------------------------- */
-
-class UnionFind {
-  private parent = new Map<NodeId, NodeId>()
-
-  find(node: NodeId): NodeId {
-    const parent = this.parent.get(node)
-    if (parent === undefined || parent === node) {
-      this.parent.set(node, node)
-      return node
-    }
-    const root = this.find(parent)
-    this.parent.set(node, root)
-    return root
-  }
-
-  union(a: NodeId, b: NodeId): void {
-    const rootA = this.find(a)
-    const rootB = this.find(b)
-    if (rootA !== rootB) this.parent.set(rootA, rootB)
-  }
-
-  joined(a: NodeId, b: NodeId): boolean {
-    return this.find(a) === this.find(b)
-  }
 }
 
 /** Lowest column a node sits at, for ordering nets the way the board reads. */
@@ -262,11 +238,45 @@ export function analyseBoard(parts: readonly PlacedPart[], bom: Bom): BoardAnaly
   const warnings: BoardWarning[] = []
 
   if (wire.joined('vcc', 'gnd')) {
-    warnings.push({
-      kind: 'rail-short',
-      refs: parts.filter((part) => part.type === 'jumper').map((part) => refs.get(part.id) ?? 'W?'),
-    })
+    warnings.push({ kind: 'rail-short', refs: shortingJumpers(parts, refs) })
   }
+
+  // Current flows through wire and the semiconductors without being limited by
+  // them — an LED, a diode or a switched-on transistor drops a little voltage,
+  // but only a resistor sets the current. These are the edges an unprotected
+  // LED's legs may reach their rails through.
+  const unlimitedEdges: { partId: string; a: string; b: string }[] = []
+  for (const part of parts) {
+    if (part.type !== 'led' && part.type !== 'diode' && part.type !== 'transistor') continue
+    for (let i = 0; i < part.holes.length; i += 1) {
+      for (let j = i + 1; j < part.holes.length; j += 1) {
+        const a = netOfPin(part, i)
+        const b = netOfPin(part, j)
+        if (a !== null && b !== null && a !== b) unlimitedEdges.push({ partId: part.id, a, b })
+      }
+    }
+  }
+
+  const reachesWithoutLimit = (from: string, to: string, excludedPartId: string): boolean => {
+    if (from === to) return true
+    const seen = new Set<string>([from])
+    const queue = [from]
+    while (queue.length > 0) {
+      const current = queue.pop()
+      if (current === undefined) break
+      for (const edge of unlimitedEdges) {
+        if (edge.partId === excludedPartId) continue
+        const next = edge.a === current ? edge.b : edge.b === current ? edge.a : null
+        if (next === null || seen.has(next)) continue
+        if (next === to) return true
+        seen.add(next)
+        queue.push(next)
+      }
+    }
+    return false
+  }
+
+  const gndNet = netOfNode.get('gnd') ?? 'GND'
 
   for (const part of parts) {
     if (part.type !== 'led') continue
@@ -276,7 +286,7 @@ export function analyseBoard(parts: readonly PlacedPart[], bom: Bom): BoardAnaly
 
     if (fromVcc.has(anodeNet) && fromGnd.has(cathodeNet)) litLeds.add(part.id)
 
-    if (anodeNet === '+5V' && cathodeNet === 'GND') {
+    if (reachesWithoutLimit(anodeNet, '+5V', part.id) && reachesWithoutLimit(cathodeNet, gndNet, part.id)) {
       warnings.push({ kind: 'led-direct', refs: [refs.get(part.id) ?? 'D?'] })
     }
   }
@@ -313,4 +323,52 @@ function netOrder(id: string): number {
   if (id === '+5V') return 0
   if (id === 'GND') return 1
   return 2 + Number(id.slice(1))
+}
+
+/**
+ * The jumpers that actually short the rails: the shortest wire path from the
+ * top rail to the bottom one, in the order a finger would trace it. Naming
+ * every jumper on the board — which is what "the rails are shorted" used to
+ * point at — sends a student to check wires that are perfectly fine.
+ */
+function shortingJumpers(parts: readonly PlacedPart[], refs: Map<string, string>): string[] {
+  const adjacency = new Map<NodeId, { next: NodeId; partId: string }[]>()
+  const addEdge = (from: NodeId, to: NodeId, partId: string) => {
+    const list = adjacency.get(from)
+    if (list) list.push({ next: to, partId })
+    else adjacency.set(from, [{ next: to, partId }])
+  }
+
+  for (const part of parts) {
+    if (part.type !== 'jumper') continue
+    const [a, b] = part.holes.map((hole) => nodeOf(hole))
+    if (a == null || b == null || a === b) continue
+    addEdge(a, b, part.id)
+    addEdge(b, a, part.id)
+  }
+
+  const cameFrom = new Map<NodeId, { previous: NodeId; partId: string }>()
+  const seen = new Set<NodeId>(['vcc'])
+  const queue: NodeId[] = ['vcc']
+
+  while (queue.length > 0) {
+    const node = queue.shift()
+    if (node === undefined || node === 'gnd') break
+    for (const edge of adjacency.get(node) ?? []) {
+      if (seen.has(edge.next)) continue
+      seen.add(edge.next)
+      cameFrom.set(edge.next, { previous: node, partId: edge.partId })
+      queue.push(edge.next)
+    }
+  }
+
+  const path: string[] = []
+  let cursor: NodeId = 'gnd'
+  while (cursor !== 'vcc') {
+    const step = cameFrom.get(cursor)
+    if (step === undefined) return path.reverse()
+    path.push(refs.get(step.partId) ?? 'W?')
+    cursor = step.previous
+  }
+  return path.reverse()
 }

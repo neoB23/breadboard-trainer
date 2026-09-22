@@ -79,6 +79,34 @@ describe('the score', () => {
     expect(protectedCheck?.columns).toContain(5)
   })
 
+  it('names only the wire that shorts the rails, not every jumper on the board', () => {
+    const parts = [...correctCircuit(), part('jumper', ['T16', 'B16'], 'jumper')]
+    const shortCheck = report(parts).checks.find((check) => check.id === 'no-shorts')
+    expect(shortCheck?.refs).toEqual(['W4'])
+    expect(shortCheck?.columns).toEqual([17])
+  })
+
+  it('flags two LEDs in series across the rails — neither has anything limiting it', () => {
+    const parts = [part('led', ['T3', 'U3r0'], 'led-red'), part('led', ['U3r1', 'B3'], 'led-red')]
+    const protectedCheck = report(parts, { requireBom: false }).checks.find(
+      (check) => check.id === 'led-protected',
+    )
+    expect(protectedCheck?.ok).toBe(false)
+    expect(protectedCheck?.refs).toEqual(['D1', 'D2'])
+  })
+
+  it('does not flag an LED with a resistor anywhere in its path', () => {
+    const parts = [
+      part('led', ['T3', 'U3r0'], 'led-red'),
+      part('resistor', ['U3r1', 'U8r0'], 'r-220'),
+      part('jumper', ['U8r1', 'B8'], 'jumper'),
+    ]
+    const protectedCheck = report(parts, { requireBom: false }).checks.find(
+      (check) => check.id === 'led-protected',
+    )
+    expect(protectedCheck?.ok).toBe(true)
+  })
+
   it('free build skips the bill-of-materials check but keeps the electrical ones', () => {
     const result = report([part('resistor', ['U4r0', 'U9r0'])], { requireBom: false })
     expect(result.checks.some((check) => check.id === 'parts-placed')).toBe(false)

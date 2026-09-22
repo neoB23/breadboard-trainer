@@ -76,7 +76,10 @@ export function runChecks(
     id: 'no-shorts',
     ok: short === undefined,
     refs: short?.refs ?? [],
-    columns: short === undefined ? [] : columnsOf(parts.filter((part) => part.type === 'jumper')),
+    columns:
+      short === undefined
+        ? []
+        : columnsOf(parts.filter((part) => short.refs.includes(analysis.refs.get(part.id) ?? ''))),
   })
 
   /* ---- nothing floating ---------------------------------------------------- */

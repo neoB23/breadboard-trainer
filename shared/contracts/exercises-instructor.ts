@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
-import { difficultySchema, listOf, optionalTextSchema, timestampSchema, uuidSchema } from './common.ts'
-import { bomSchema, exerciseStudentSchema } from './exercises.ts'
+import { componentTypeSchema, exerciseStudentSchema } from './exercises.ts'
 
 /**
  * The instructor half of the exercise contract — including the golden netlist.
@@ -17,15 +16,19 @@ import { bomSchema, exerciseStudentSchema } from './exercises.ts'
  * That is not stylistic. A Zod schema is a value, built by a function call at
  * module scope, so a bundler cannot prove it side-effect-free and cannot shake
  * it out. The moment one client screen imported *anything* from the barrel, the
- * shape carrying `goldenNetlist` — and `hasGoldenNetlist` with it — was compiled
- * into the student bundle. `tests/bundle/client-secrets.test.ts` caught exactly
- * that when the dashboard started reading the exercise list.
+ * shape carrying `goldenNetlist` was compiled into the student bundle.
+ * `tests/bundle/client-secrets.test.ts` caught exactly that when the dashboard
+ * started reading the exercise list.
  *
  * Nothing was leaking: a key name in a schema is not a reference circuit. But
  * the rule this project defends is that the answer key has no business being
  * anywhere near a student, and "the shape is in their bundle" is the first step
  * of it being in their response. Keeping the module out of the barrel means the
  * student build cannot reach it even transitively.
+ *
+ * Since the teacher's own screens exist, this module is **server-only** in
+ * practice: those screens import `teach-authoring.ts`, which carries no golden
+ * key at all, so not even the instructor bundle holds the shape.
  *
  * The reverse dependency is fine and intended: this file imports from
  * `exercises.ts`, never the other way round.
@@ -37,15 +40,47 @@ import { bomSchema, exerciseStudentSchema } from './exercises.ts'
 /* -------------------------------------------------------------------------- */
 
 /**
- * Loose on purpose. Phase 11 designs the canonical netlist form and Phase 12
- * captures it; the only thing that must be true from day one is that it carries
- * a version, because `exercises.netlist_version` has to mean something when a
- * re-capture invalidates existing attempts.
+ * The canonical netlist from `src/board/netlist.ts`, plus the board it was
+ * built on. `version` is the *format*: 2 is the canonical form, and 1 was the
+ * placeholder the seed carried before the comparator existed — still readable,
+ * so an old row does not break a list, but never gradable and never
+ * publishable.
  *
- * Tighten the interior in Phase 11. Guessing it now would produce a contract
- * that has to be broken to be corrected.
+ * The capture revision is a different number, `exercises.netlist_version`.
  */
-export const goldenNetlistSchema = z.looseObject({ version: z.int().min(1) })
+const placedPartSchema = z.object({
+  id: z.string().min(1),
+  bomItemId: z.string(),
+  type: componentTypeSchema,
+  label: z.string().nullable(),
+  value: z.string().nullable(),
+  holes: z.array(z.string()),
+})
+
+export const pinRoleSchema = z.enum(['1', '2', 'A', 'K', 'C', 'B', 'E'])
+
+export const goldenNetlistV2Schema = z.object({
+  version: z.literal(2),
+  referenceBoard: z.object({ version: z.literal(1), parts: z.array(placedPartSchema) }),
+  components: z.array(
+    z.object({
+      key: z.string().min(1),
+      partId: z.string().min(1),
+      bomItemId: z.string(),
+      type: componentTypeSchema,
+      value: z.string().nullable(),
+      label: z.string().nullable(),
+      pins: z.array(pinRoleSchema),
+      holeIndex: z.array(z.int().min(0)),
+    }),
+  ),
+  nets: z.array(z.object({ rails: z.array(z.enum(['vcc', 'gnd'])), members: z.array(z.string()) })),
+})
+export type GoldenNetlistV2 = z.infer<typeof goldenNetlistV2Schema>
+
+const legacyGoldenNetlistSchema = z.looseObject({ version: z.literal(1) })
+
+export const goldenNetlistSchema = z.union([goldenNetlistV2Schema, legacyGoldenNetlistSchema])
 export type GoldenNetlist = z.infer<typeof goldenNetlistSchema>
 
 /** Adds the one field students may never receive. */
@@ -58,82 +93,28 @@ export type ExerciseInstructor = z.infer<typeof exerciseInstructorSchema>
 /* Instructor reads and writes                                                 */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Carries `hasGoldenNetlist` rather than the netlist itself so the authoring
- * list can show a "captured / not captured" badge without shipping every
- * reference circuit down to render a list.
- */
-export const instructorExerciseSummarySchema = exerciseStudentSchema.extend({
-  hasGoldenNetlist: z.boolean(),
-  attemptCount: z.int().min(0),
-})
-export type InstructorExerciseSummary = z.infer<typeof instructorExerciseSummarySchema>
-
-export const instructorExerciseListResponseSchema = listOf(instructorExerciseSummarySchema)
-export type InstructorExerciseListResponse = z.infer<typeof instructorExerciseListResponseSchema>
-
+/** `GET /api/teach/exercises/:id` — the one response that carries the netlist itself. */
 export const instructorExerciseResponseSchema = z.object({ exercise: exerciseInstructorSchema })
 export type InstructorExerciseResponse = z.infer<typeof instructorExerciseResponseSchema>
 
 /**
- * `goldenNetlist` is not settable here. It is captured through Learn Mode and
- * nowhere else, because capture is what runs the validity checks in Phase 12
- * (no floating leads, no shorts, every BOM part used) and bumps the version.
+ * The authoring list, the create/update/publish requests and Learn Mode
+ * capture live in `teach-authoring.ts`, because the teacher's screens import
+ * them. Re-exported here so the server keeps one import path for everything
+ * instructor-side.
  */
-export const exerciseCreateRequestSchema = z.object({
-  title: z.string().trim().min(3, { error: 'Give the exercise a title.' }).max(160),
-  objective: optionalTextSchema(600).optional(),
-  difficulty: difficultySchema,
-  classId: uuidSchema.nullable().optional(),
-  schematicUrl: z.string().max(2048).nullable().optional(),
-  bom: bomSchema.default([]),
-})
-export type ExerciseCreateRequest = z.infer<typeof exerciseCreateRequestSchema>
-
-export const exerciseUpdateRequestSchema = exerciseCreateRequestSchema
-  .partial()
-  .refine((value) => Object.keys(value).length > 0, { error: 'Nothing to update.' })
-export type ExerciseUpdateRequest = z.infer<typeof exerciseUpdateRequestSchema>
-
-/**
- * Publishing is its own endpoint rather than a field on update, so the guard it
- * needs — you cannot publish an exercise with no captured netlist — lives in
- * one handler instead of being re-checked on every metadata edit.
- */
-export const exercisePublishRequestSchema = z.object({ published: z.boolean() })
-export type ExercisePublishRequest = z.infer<typeof exercisePublishRequestSchema>
-
-/* -------------------------------------------------------------------------- */
-/* Learn Mode capture (Phase 12)                                               */
-/* -------------------------------------------------------------------------- */
-
-/**
- * `confirmReplace` exists because a re-capture increments `netlist_version` and
- * invalidates every attempt judged against the old one. The instructor has to
- * say so twice — once in the dialog, once on the wire.
- */
-export const captureNetlistRequestSchema = z.object({
-  netlist: goldenNetlistSchema,
-  confirmReplace: z.boolean().default(false),
-})
-export type CaptureNetlistRequest = z.infer<typeof captureNetlistRequestSchema>
-
-export const captureNetlistResponseSchema = z.object({
-  netlistVersion: z.int().min(1),
-  capturedAt: timestampSchema,
-  /** Attempts made against the previous version, now stale. */
-  invalidatedAttempts: z.int().min(0),
-})
-export type CaptureNetlistResponse = z.infer<typeof captureNetlistResponseSchema>
-
-/**
- * Capture-time validation failures, returned as `details` on a
- * `validation_failed` error. Phase 12 DoD requires a *specific* reason, not
- * "invalid circuit".
- */
-export const captureValidationIssueSchema = z.object({
-  reason: z.enum(['floating_lead', 'short_circuit', 'unused_bom_component', 'empty_board']),
-  message: z.string(),
-  rowLabels: z.array(z.string()).default([]),
-})
-export type CaptureValidationIssue = z.infer<typeof captureValidationIssueSchema>
+export {
+  captureReferenceRequestSchema,
+  exerciseCreateRequestSchema,
+  exercisePublishRequestSchema,
+  exerciseUpdateRequestSchema,
+  teachExerciseListResponseSchema,
+  teachExerciseResponseSchema,
+  teachExerciseSchema,
+  type CaptureReferenceRequest,
+  type ExerciseCreateRequest,
+  type ExercisePublishRequest,
+  type ExerciseUpdateRequest,
+  type TeachExercise,
+  type TeachExerciseListResponse,
+} from './teach-authoring.ts'

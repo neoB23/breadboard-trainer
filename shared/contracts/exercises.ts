@@ -120,8 +120,12 @@ export type GoldenNetlistIsNotStudentVisible = Expect<
  * Both spellings: camelCase is what the wire carries, snake_case is what a raw
  * `select *` would produce if a handler ever bypassed Drizzle's mapping. The
  * tripwire has to catch the mistake in the form the mistake actually takes.
+ *
+ * `referenceBoard` is the instructor's reference circuit *as a board* — what
+ * Learn Mode reloads, and what the stored netlist carries alongside itself. It
+ * is the answer key by another name, so it is guarded like one.
  */
-export const GOLDEN_NETLIST_KEYS = ['goldenNetlist', 'golden_netlist'] as const
+export const GOLDEN_NETLIST_KEYS = ['goldenNetlist', 'golden_netlist', 'referenceBoard'] as const
 
 /**
  * Depth-first search for a golden netlist key anywhere in a payload, returning

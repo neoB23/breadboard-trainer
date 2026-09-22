@@ -154,12 +154,13 @@ export interface RequestOptions {
   headers?: Record<string, string>
   timeoutMs?: number
   /**
-   * Opt out of the development-only golden netlist tripwire below. Set it on
-   * the handful of instructor calls that legitimately carry a reference
-   * circuit — `/api/teach/exercises/:id` and Learn Mode capture — and nowhere
-   * else. Default-deny, so forgetting it is loud rather than silent.
+   * Opt out of the development-only answer-key tripwire below. Set it on the
+   * one instructor call that legitimately carries a reference circuit — Learn
+   * Mode's `GET /api/teach/exercises/:id/reference` — and nowhere else.
+   * Default-deny, so forgetting it is loud rather than silent. (The name avoids
+   * the words the bundle test refuses to find in a build.)
    */
-  allowGoldenNetlist?: boolean
+  allowAnswerKey?: boolean
 }
 
 interface RequestConfig extends RequestOptions {
@@ -255,11 +256,11 @@ async function request<S extends z.ZodTypeAny>(
   }
 
   // Guarded at the call site, not inside the function: with the check one level
-  // down, the argument expression `config.allowGoldenNetlist` survives
+  // down, the argument expression `config.allowAnswerKey` survives
   // minification as a property read, and `tests/bundle/client-secrets.test.ts`
   // correctly refuses to see the words "golden netlist" anywhere in a student's
   // bundle. Wrapping the whole statement lets it be dropped outright.
-  if (import.meta.env.DEV) guardGoldenNetlist(url, raw, config.allowGoldenNetlist === true)
+  if (import.meta.env.DEV) guardGoldenNetlist(url, raw, config.allowAnswerKey === true)
 
   const parsed = schema.safeParse(raw)
   if (!parsed.success) {
@@ -310,7 +311,7 @@ function guardGoldenNetlist(url: string, payload: unknown, allowed: boolean): vo
     console.error(
       `[api] GOLDEN NETLIST LEAK — ${url} returned a golden netlist at ${at}.\n` +
         'A student-facing handler must select exerciseStudentColumns. If this endpoint is ' +
-        'instructor-only, pass { allowGoldenNetlist: true }.',
+        'instructor-only, pass { allowAnswerKey: true }.',
     )
   }
 }

@@ -5,9 +5,19 @@ import { hashPassword } from 'better-auth/crypto'
 import { and, eq, inArray, notInArray, sql } from 'drizzle-orm'
 
 import type { Bom, ProfilePreferences } from '../../shared/contracts/index.ts'
-// Deliberately not in the barrel — see the note at the top of that module.
-import type { GoldenNetlist } from '../../shared/contracts/exercises-instructor.ts'
+import { parseBoardState, serializeBoard, type PlacedPart } from '../../src/board/model.ts'
+import { buildGoldenNetlist } from '../../src/board/netlist.ts'
+import { gradeSubmission } from '../grading/submit.ts'
 import { db } from './client.ts'
+import {
+  astableBoard,
+  parallelLedsBoard,
+  potDividerBoard,
+  rcFilterBoard,
+  seriesLedBoard,
+  shiftBoard,
+  transistorSwitchBoard,
+} from './reference-boards.ts'
 import { account, attempts, classes, enrollments, exercises, profiles, user } from './schema.ts'
 
 /**
@@ -131,25 +141,15 @@ const DIVIDER_BOM: Bom = [
 ]
 
 /**
- * A placeholder with the one field that has to be real from day one — the
- * version, because `exercises.netlist_version` must mean something when a
- * re-capture invalidates existing attempts. Phase 11 designs the canonical
- * form and Phase 12 captures it for real; `goldenNetlistSchema` is a loose
- * object precisely so this can be replaced without a contract change.
- *
- * It is here at all because `POST /teach/exercises/:id/publish` refuses to
- * publish an exercise with no captured netlist, so a seeded *published*
- * exercise without one would be a state the API itself cannot produce.
+ * Every published exercise carries a real reference, built from a real board
+ * with the same `buildGoldenNetlist` Learn Mode capture uses — see
+ * `reference-boards.ts`. A published exercise without one would be a state the
+ * API itself cannot produce: `POST /teach/exercises/:id/publish` refuses it.
  */
-const LED_GOLDEN_NETLIST: GoldenNetlist = {
-  version: 1,
-  placeholder: true,
-  nodes: ['VCC', 'N1', 'GND'],
-  edges: [
-    { type: 'resistor', value: '220Ω', endpoints: ['VCC', 'N1'] },
-    { type: 'led', value: 'Red 2V', endpoints: ['N1', 'GND'], polarity: 'anode-first' },
-  ],
-}
+const referenceFor = (board: PlacedPart[], bom: Bom) =>
+  // Through the board parser first, exactly as capture does: it is what fills
+  // each part's label and value in from the tray.
+  buildGoldenNetlist(parseBoardState(serializeBoard(board), bom))
 
 /* -------------------------------------------------------------------------- */
 /* The exercise library                                                       */
@@ -168,7 +168,7 @@ const LED_GOLDEN_NETLIST: GoldenNetlist = {
  * Each one is a circuit a second-year lab actually sets. Nothing here is
  * lorem ipsum: an objective a student cannot act on is worse than a blank.
  */
-const LIBRARY = [
+const LIBRARY_SOURCE = [
   {
     id: SEED.exerciseIds.parallelLeds,
     title: 'Two LEDs in parallel',
@@ -181,6 +181,7 @@ const LIBRARY = [
       { id: 'led-red', type: 'led', label: 'Indicator LED', value: 'Red 2V', quantity: 2 },
       { id: 'jumper', type: 'jumper', label: 'Jumper wire', value: null, quantity: 4 },
     ] satisfies Bom,
+    board: parallelLedsBoard(),
   },
   {
     id: SEED.exerciseIds.potDivider,
@@ -193,6 +194,7 @@ const LIBRARY = [
       { id: 'pot-10k', type: 'resistor', label: 'Potentiometer', value: '10kΩ', quantity: 1 },
       { id: 'jumper', type: 'jumper', label: 'Jumper wire', value: null, quantity: 4 },
     ] satisfies Bom,
+    board: potDividerBoard(),
   },
   {
     id: SEED.exerciseIds.rcFilter,
@@ -204,6 +206,7 @@ const LIBRARY = [
       { id: 'c-100n', type: 'capacitor', label: 'Shunt capacitor', value: '100nF', quantity: 1 },
       { id: 'jumper', type: 'jumper', label: 'Jumper wire', value: null, quantity: 3 },
     ] satisfies Bom,
+    board: rcFilterBoard(),
   },
   {
     id: SEED.exerciseIds.transistorSwitch,
@@ -219,6 +222,7 @@ const LIBRARY = [
       { id: 'led-red', type: 'led', label: 'Indicator LED', value: 'Red 2V', quantity: 1 },
       { id: 'jumper', type: 'jumper', label: 'Jumper wire', value: null, quantity: 5 },
     ] satisfies Bom,
+    board: transistorSwitchBoard(),
   },
   {
     id: SEED.exerciseIds.astable,
@@ -229,23 +233,70 @@ const LIBRARY = [
     difficulty: 4,
     bom: [
       { id: 'r-10k', type: 'resistor', label: 'Timing resistor', value: '10kΩ', quantity: 2 },
+      // The collector loads. Without them each LED sits between +5V and a
+      // switched-on transistor with nothing limiting its current — a circuit
+      // the trainer itself would flag as unsafe, and so not one it can use as
+      // the answer.
+      { id: 'r-470', type: 'resistor', label: 'LED resistor', value: '470Ω', quantity: 2 },
       { id: 'c-10u', type: 'capacitor', label: 'Timing capacitor', value: '10µF', quantity: 2 },
       { id: 'q-2n2222', type: 'transistor', label: 'NPN transistor', value: '2N2222', quantity: 2 },
       { id: 'led-red', type: 'led', label: 'Indicator LED', value: 'Red 2V', quantity: 2 },
       { id: 'jumper', type: 'jumper', label: 'Jumper wire', value: null, quantity: 8 },
     ] satisfies Bom,
+    board: astableBoard(),
   },
-].map((exercise) => ({
+] satisfies {
+  id: string
+  title: string
+  objective: string
+  difficulty: number
+  bom: Bom
+  board: PlacedPart[]
+}[]
+
+const LIBRARY = LIBRARY_SOURCE.map(({ board, ...exercise }) => ({
   ...exercise,
   authorId: SEED.instructor,
   classId: SEED.classId,
-  // Every one is published and carries a captured netlist, because
+  // Every one is published and carries a captured reference, because
   // `POST /teach/exercises/:id/publish` refuses to publish without one — a
   // seeded row the API itself could not have produced is a bad fixture.
-  goldenNetlist: LED_GOLDEN_NETLIST,
+  goldenNetlist: referenceFor(board, exercise.bom),
   netlistVersion: 1,
   published: true,
 }))
+
+/**
+ * Every captured reference the seed writes, with the tray it was built from —
+ * what `tests/unit/seed-references.test.ts` holds to the same bar Learn Mode
+ * capture does.
+ */
+export const SEED_REFERENCES: readonly { exerciseId: string; bom: Bom; board: () => PlacedPart[] }[] = [
+  { exerciseId: SEED.publishedExerciseId, bom: LED_CIRCUIT_BOM, board: seriesLedBoard },
+  {
+    exerciseId: SEED.exerciseIds.parallelLeds,
+    bom: bomOf(SEED.exerciseIds.parallelLeds),
+    board: parallelLedsBoard,
+  },
+  {
+    exerciseId: SEED.exerciseIds.potDivider,
+    bom: bomOf(SEED.exerciseIds.potDivider),
+    board: potDividerBoard,
+  },
+  { exerciseId: SEED.exerciseIds.rcFilter, bom: bomOf(SEED.exerciseIds.rcFilter), board: rcFilterBoard },
+  {
+    exerciseId: SEED.exerciseIds.transistorSwitch,
+    bom: bomOf(SEED.exerciseIds.transistorSwitch),
+    board: transistorSwitchBoard,
+  },
+  { exerciseId: SEED.exerciseIds.astable, bom: bomOf(SEED.exerciseIds.astable), board: astableBoard },
+]
+
+function bomOf(exerciseId: string): Bom {
+  const found = LIBRARY_SOURCE.find((exercise) => exercise.id === exerciseId)
+  if (!found) throw new Error(`no seeded exercise ${exerciseId}`)
+  return found.bom
+}
 
 export async function seed({ quiet = false }: { quiet?: boolean } = {}): Promise<void> {
   await assertMigrated()
@@ -422,7 +473,7 @@ export async function seed({ quiet = false }: { quiet?: boolean } = {}): Promise
           'observing polarity.',
         difficulty: 1,
         bom: LED_CIRCUIT_BOM,
-        goldenNetlist: LED_GOLDEN_NETLIST,
+        goldenNetlist: referenceFor(seriesLedBoard(), LED_CIRCUIT_BOM),
         netlistVersion: 1,
         published: true,
       },
@@ -494,6 +545,51 @@ export async function seed({ quiet = false }: { quiet?: boolean } = {}): Promise
       ),
     )
 
+  /**
+   * The same policy for what the seeded instructor authored: exercises and
+   * classes the seed did not write — left behind by a manual test-drive of the
+   * authoring screens, or by the e2e suite's own teacher — are removed, along
+   * with any attempts on those exercises. Otherwise every run of the suite adds
+   * another copy of its task to Prof. Reyes's list.
+   */
+  const seededExerciseIds = [
+    SEED.publishedExerciseId,
+    SEED.draftExerciseId,
+    ...Object.values(SEED.exerciseIds),
+  ]
+  const strayExercises = db
+    .select({ id: exercises.id })
+    .from(exercises)
+    .where(and(eq(exercises.authorId, SEED.instructor), notInArray(exercises.id, seededExerciseIds)))
+  await db.delete(attempts).where(inArray(attempts.exerciseId, strayExercises))
+  await db.delete(exercises).where(inArray(exercises.id, strayExercises))
+  await db
+    .delete(classes)
+    .where(and(eq(classes.instructorId, SEED.instructor), notInArray(classes.id, [SEED.classId])))
+
+  /**
+   * The handed-in attempts carry real boards and real grades, computed with
+   * the submit route's own `gradeSubmission`, so the instructor's scores list
+   * and the student's result page have something true to show. The two
+   * finished runs are the reference built further along the board — full
+   * marks, which is the whole point — and the abandoned one is missing its
+   * ground wire.
+   */
+  const handedIn = (exerciseId: string, board: PlacedPart[], when: Date) => {
+    const reference = SEED_REFERENCES.find((entry) => entry.exerciseId === exerciseId)
+    if (!reference) throw new Error(`no seeded reference for ${exerciseId}`)
+    const finalState = serializeBoard(board)
+    const judged = gradeSubmission(finalState, reference.bom, referenceFor(reference.board(), reference.bom))
+    return {
+      finalState,
+      score: judged.graded?.grade.score ?? null,
+      scoreBreakdown: judged.graded ?? null,
+      gradedAt: judged.graded === null ? null : when,
+      netlistVersion: judged.graded === null ? null : 1,
+      feedback: null,
+    }
+  }
+
   await db
     .insert(attempts)
     .values([
@@ -508,6 +604,7 @@ export async function seed({ quiet = false }: { quiet?: boolean } = {}): Promise
         faultsEncountered: 2,
         faultsSelfResolved: 2,
         durationMs: 14 * 60_000,
+        ...handedIn(SEED.publishedExerciseId, shiftBoard(seriesLedBoard(), 3), daysAgo(9)),
       },
       {
         id: SEED.attemptIds.cruzParallelDone,
@@ -520,6 +617,7 @@ export async function seed({ quiet = false }: { quiet?: boolean } = {}): Promise
         faultsEncountered: 1,
         faultsSelfResolved: 1,
         durationMs: 9 * 60_000,
+        ...handedIn(SEED.exerciseIds.parallelLeds, shiftBoard(parallelLedsBoard(), 2), daysAgo(5)),
       },
       {
         // Submitted but not completed: a run that was given up on. It leaves the
@@ -535,6 +633,11 @@ export async function seed({ quiet = false }: { quiet?: boolean } = {}): Promise
         faultsEncountered: 4,
         faultsSelfResolved: 1,
         durationMs: 21 * 60_000,
+        ...handedIn(
+          SEED.exerciseIds.rcFilter,
+          shiftBoard(rcFilterBoard(), 4).filter((placed) => placed.id !== 'stu-w2'),
+          daysAgo(2),
+        ),
       },
       {
         // The open one. `submitted_at` null is what makes this the attempt the
@@ -549,6 +652,12 @@ export async function seed({ quiet = false }: { quiet?: boolean } = {}): Promise
         faultsEncountered: 1,
         faultsSelfResolved: 0,
         durationMs: null,
+        finalState: null,
+        score: null,
+        scoreBreakdown: null,
+        gradedAt: null,
+        netlistVersion: null,
+        feedback: null,
       },
     ])
     .onConflictDoUpdate({
@@ -561,6 +670,12 @@ export async function seed({ quiet = false }: { quiet?: boolean } = {}): Promise
         faultsEncountered: sql`excluded.faults_encountered`,
         faultsSelfResolved: sql`excluded.faults_self_resolved`,
         durationMs: sql`excluded.duration_ms`,
+        finalState: sql`excluded.final_state`,
+        score: sql`excluded.score`,
+        scoreBreakdown: sql`excluded.score_breakdown`,
+        gradedAt: sql`excluded.graded_at`,
+        netlistVersion: sql`excluded.netlist_version`,
+        feedback: sql`excluded.feedback`,
       },
     })
 

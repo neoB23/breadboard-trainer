@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { pageOf, pageQuerySchema, timestampSchema, userIdSchema, uuidSchema } from './common.ts'
 import { boardStateSchema, exerciseStudentSchema } from './exercises.ts'
+import { feedbackViewSchema, findingSchema, gradeSchema } from './grading.ts'
 
 /**
  * Attempts — one student's run at one exercise.
@@ -24,6 +25,13 @@ export const attemptSchema = z.object({
   faultsSelfResolved: z.int().min(0),
   /** Null until submission. Wall-clock, not time-on-task. */
   durationMs: z.int().min(0).nullable(),
+  /**
+   * The auto score out of 100, computed on the server at submit against the
+   * instructor's reference circuit. Null until then, and null for an exercise
+   * with no reference to judge against.
+   */
+  score: z.int().min(0).max(100).nullable(),
+  gradedAt: timestampSchema.nullable(),
   /**
    * The board snapshot. Absent from list rows — a 20-component board is far
    * more payload than a dashboard row needs, and shipping it per row is how a
@@ -91,6 +99,10 @@ export type AttemptSaveRequest = z.infer<typeof attemptSaveRequestSchema>
  * `durationMs` comes from the client because the elapsed timer is what the
  * student watched; the server still records `submitted_at` itself, so the two
  * can be reconciled if a clock is wrong.
+ *
+ * `completed` is still accepted, for older clients, and **ignored**: the server
+ * derives it from the board it was sent, because a grade that trusted the
+ * client's opinion of its own work would not be a grade.
  */
 export const attemptSubmitRequestSchema = z.object({
   finalState: boardStateSchema,
@@ -132,6 +144,14 @@ export const attemptResultResponseSchema = z.object({
   attempt: attemptSchema,
   exercise: exerciseStudentSchema,
   faultTimeline: z.array(faultTimelineEntrySchema).default([]),
+  /** Null until submitted, and for an exercise with no reference circuit. */
+  grade: gradeSchema.nullable(),
+  /** What to fix first — at most three, in focus order. Empty on a perfect board. */
+  findings: z.array(findingSchema),
+  /** After-submit coaching. Null until submitted. */
+  feedback: feedbackViewSchema.nullable(),
+  /** The instructor has re-captured the reference since this attempt was graded. */
+  stale: z.boolean(),
 })
 export type AttemptResultResponse = z.infer<typeof attemptResultResponseSchema>
 

@@ -454,7 +454,7 @@ export const fil: Catalog = {
   'workspace.warning.railShort':
     'Direktang magkakabit ang +5V at ground rails. Tanggalin muna ang jumper na iyon bago ang lahat.',
   'workspace.warning.ledDirect':
-    'Direktang nakadikit sa rails ang {refs} nang walang panglimita ng kuryente — ilagay ang resistor sa daanan nito.',
+    'Umaabot sa dalawang rail ang {refs} nang walang panglimita ng kuryente — maglagay ng resistor sa daanan nito.',
   'workspace.complete.title': 'Kumpleto ang sirkit',
   'workspace.complete.body':
     'Nakalagay ang lahat ng parte, naaabot ng kuryente ang lahat, at umiilaw ang LED. Ipasa kapag handa ka na.',
@@ -535,6 +535,87 @@ export const fil: Catalog = {
   'board.diagnosis':
     'Hindi umaabot sa ground ang cathode ng D1. Nasa kabilang panig ng gitnang channel ang jumper, kaya dalawa ang naging node na dapat ay iisa.',
   'board.hint': 'I-hover ang isang net para tumingkad ito sa board.',
+
+  /* ---- results (after hand-in) ------------------------------------------ */
+  'results.crumb': 'Resulta',
+  'results.loadingTitle': 'Binubuksan ang resulta mo',
+  'results.title': 'Ang resulta mo',
+  'results.scoreLabel': 'Iskor',
+  'results.scoreOf': '{score} / 100',
+  'results.submittedAt': 'Ipinasa {when}',
+  'results.breakdown.title': 'Paano ito binigyan ng iskor',
+  'results.breakdown.points': '{earned} / {possible}',
+  'results.suggestions.title': 'Ano ang titingnan',
+  'results.suggestions.lead': 'Magsimula sa una — kadalasan, nababago nito ang iba pa kapag naayos.',
+  'results.suggestions.showFix': 'Ipakita ang ayos',
+  'results.suggestions.hideFix': 'Itago ang ayos',
+  'results.suggestions.fixLabel': 'Ang ayos',
+  'results.source.model': 'Isinulat ng AI coach',
+  'results.source.rules': 'Mga tala ng coach',
+  'results.clean.title': 'Tugma ito sa sirkit ng gawain',
+  'results.stale':
+    'Binago ng instructor mo ang reference circuit mula nang ma-iskoran ito. Mananatili ang iskor; ang susunod mong pagbuo ay iiskoran laban sa bago.',
+  'results.ungraded.title': 'Naipasa — walang iskor',
+  'results.ungraded.description':
+    'Walang reference circuit ang ehersisyong ito noong ipinasa mo, kaya walang mapaghahambingan ng iskor.',
+  'results.open.title': 'Hindi pa naipapasa',
+  'results.open.description': 'Bukas pa ang attempt na ito. Bumalik sa board para tapusin.',
+  'results.open.action': 'Bumalik sa board',
+  'results.actions.dashboard': 'Bumalik sa dashboard',
+  'results.actions.retry': 'Buuin itong muli',
+  'results.failed.description': 'Hindi ma-load ang resultang ito. Subukan ulit maya-maya.',
+  'results.notFound.title': 'Hindi para sa iyo ang resultang iyon',
+  'results.notFound.description': 'Sa ibang estudyante ito, o wala ito.',
+
+  /* ---- grade lines ------------------------------------------------------- */
+  'grade.line.circuit': 'Tugma sa sirkit ng gawain',
+  'grade.line.parts': 'Tamang mga parte',
+  'grade.line.polarity': 'Polarity',
+  'grade.line.safety': 'Kaligtasan',
+  'grade.circuit.full': 'Nasa lugar ang bawat koneksyon ng sirkit ng gawain.',
+  'grade.circuit.partial': '{linked} sa {total} na koneksyon ang tugma sa sirkit ng gawain.',
+  'grade.circuit.none': 'Wala pang koneksyon ng sirkit ng gawain ang nasa lugar.',
+  'grade.parts.full': 'Ang bawat parte ay ang hinihingi ng gawain.',
+  'grade.parts.missing': 'Mga parte ng gawain na wala sa board: {missing}.',
+  'grade.parts.wrongValue': 'Mga parteng iba ang value sa hinihingi: {wrongValue}.',
+  'grade.parts.none': 'Wala sa board ang alinmang parte ng gawain.',
+  'grade.polarity.full': 'Tama ang harap ng bawat parteng may direksyon.',
+  'grade.polarity.reversed': 'Mga parteng baligtad ang pagkakalagay: {reversed}.',
+  'grade.polarity.notWired':
+    'Binibilang ang direksyon kapag nakakabit na ang parte — {right} sa {total} pa lang.',
+  'grade.polarity.noPolarParts': 'Walang parte sa sirkit na ito ang puwedeng mabaligtad.',
+  'grade.polarity.empty': 'Walang masusuri sa board.',
+  'grade.safety.full': 'Walang short, at may panglimita ng kuryente ang bawat LED.',
+  'grade.safety.railShort': 'Naka-short ang +5V at ground rail.',
+  'grade.safety.unprotected': 'Walang naglilimita ng kuryente sa {refs}.',
+  'grade.safety.empty': 'Walang masusuri sa board.',
+
+  /* ---- AI coach: findings, hint first ------------------------------------ */
+  'coach.endpoint.vcc': 'ang +5V rail',
+  'coach.endpoint.gnd': 'ang ground rail',
+  'coach.endpoint.pin': '{ref}.{pin} (column {column})',
+  'coach.rail_short.question':
+    'Sundan ang daan mula sa +5V rail papuntang ground gamit lang ang wire. Ano ang pipigil sa kuryente?',
+  'coach.rail_short.fix':
+    'Tanggalin ang {refs} — direkta nitong ikinakabit ang +5V sa ground (columns {columns}).',
+  'coach.led_unprotected.question': 'Ano ang naglilimita ng kuryente sa {refs}?',
+  'coach.led_unprotected.fix':
+    'Ilagay ang resistor sa daanan ng {refs}, sa pagitan ng rail at ng LED (columns {columns}).',
+  'coach.missing_part.question': 'Tingnan ang tray — nasa board ba ang bawat parteng hinihingi ng gawain?',
+  'coach.missing_part.fix': 'Ilagay ang {part}. Wala pa ito sa sirkit mo.',
+  'coach.missing_link.question': 'Sundan ang {a}. Saan ito dapat sumunod na kumonekta?',
+  'coach.missing_link.fix': 'Ikonekta ang {a} sa {b}.',
+  'coach.extra_link.question': 'Magkakabit ang {a} at {b}. Dapat ba?',
+  'coach.extra_link.fix': 'Paghiwalayin ang {a} at {b} — hindi sila magkakabit sa sirkit ng gawain.',
+  'coach.polarity.question': 'Aling binti ng {refs} ang dapat nakaharap sa positibong panig?',
+  'coach.polarity.fix': 'Baligtarin ang {refs} (columns {columns}).',
+  'coach.wrong_value.question': 'Tingnan ang value ng {refs}. Iyon ba ang hinihingi ng gawain?',
+  'coach.wrong_value.fix': 'Palitan ang {refs} ({actual}) ng parteng {expected}.',
+  'coach.clean.praise': 'Tugma ang bawat koneksyon sa sirkit ng gawain. Mahusay ang pagkakabuo.',
+  'coach.strength.circuit': 'Tugma ang sirkit sa gawain.',
+  'coach.strength.parts': 'Tama ang mga parteng pinili mo.',
+  'coach.strength.polarity': 'Tama ang harap ng bawat parteng may direksyon.',
+  'coach.strength.safety': 'Ligtas i-power ang board.',
 
   /* ---- errors ----------------------------------------------------------- */
   'error.generic': 'Hindi ito gumana. Subukan ulit.',

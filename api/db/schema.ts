@@ -266,12 +266,32 @@ export const attempts = pgTable(
     faultsEncountered: integer('faults_encountered').notNull().default(0),
     faultsSelfResolved: integer('faults_self_resolved').notNull().default(0),
     durationMs: integer('duration_ms'),
+
+    /*
+     * Grading, written once, at submit, by the server (build plan v1.3).
+     *
+     * These are interim columns for the graded-task slice. They map one-to-one
+     * onto Section 2.1's tables when Phases 22–25 build them: `score` becomes
+     * `grades.auto_score`, `score_breakdown` becomes `grades.auto_breakdown`,
+     * and `feedback` becomes an `ai_feedback` row. Keeping them on the attempt
+     * until then avoids a table whose only job would be to be migrated away.
+     */
+    /** Out of 100. Null until graded, and for an exercise with no reference to judge against. */
+    score: integer('score'),
+    /** The grade's lines, the findings and the comparator's counts — enough to reproduce the score. */
+    scoreBreakdown: jsonb('score_breakdown'),
+    gradedAt: timestamp('graded_at', { withTimezone: true }),
+    /** The reference revision this attempt was graded against. Stale once it differs from the exercise's. */
+    netlistVersion: integer('netlist_version'),
+    /** After-submit coaching. Null means none was generated; the result renders catalogue text. */
+    feedback: jsonb('feedback'),
   },
   (t) => [
     /** "My attempts", and "my attempt at this exercise" for the resume check. */
     index('attempts_student_exercise_idx').on(t.studentId, t.exerciseId),
     /** Instructor analytics, which aggregate by exercise across a whole class. */
     index('attempts_exercise_idx').on(t.exerciseId),
+    check('attempts_score_check', sql`${t.score} is null or ${t.score} between 0 and 100`),
   ],
 )
 

@@ -81,9 +81,9 @@ describe('student-facing responses', () => {
     expect(reply.status).toBe(200)
     expect(findGoldenNetlist(reply.body)).toBeNull()
 
-    const items = (reply.body as { items: { id: string; hasGoldenNetlist: boolean }[] }).items
+    const items = (reply.body as { items: { id: string; hasReference: boolean }[] }).items
     const published = items.find((item) => item.id === SEED.publishedExerciseId)
-    expect(published?.hasGoldenNetlist).toBe(true)
+    expect(published?.hasReference).toBe(true)
   })
 })
 
@@ -106,6 +106,19 @@ describe('the detector actually detects', () => {
     )
     expect(findGoldenNetlist({ exercise: { golden_netlist: null } })).toBe('$.exercise.golden_netlist')
     expect(findGoldenNetlist({ exercise: { title: 'x', bom: [] } })).toBeNull()
+  })
+
+  it('treats the instructor’s reference board as the answer key it is', () => {
+    expect(findGoldenNetlist({ reference: { referenceBoard: { version: 1, parts: [] } } })).toBe(
+      '$.reference.referenceBoard',
+    )
+  })
+
+  it('an instructor Learn Mode reload DOES contain the reference board', async () => {
+    const reply = await call(`/api/teach/exercises/${SEED.publishedExerciseId}/reference`, { as: INSTRUCTOR })
+
+    expect(reply.status).toBe(200)
+    expect(findGoldenNetlist(reply.body)).toBe('$.reference.referenceBoard')
   })
 })
 

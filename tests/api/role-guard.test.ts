@@ -45,8 +45,12 @@ const TEACH_ROUTES: readonly { method: string; path: string; body?: unknown }[] 
   {
     method: 'POST',
     path: `/api/teach/exercises/${SEED.publishedExerciseId}/capture`,
-    body: { netlist: { version: 1 }, confirmReplace: true },
+    body: { board: { version: 1, parts: [] }, confirmReplace: true },
   },
+  // Learn Mode's reload carries the instructor's own board — the answer key as
+  // a board — and the scores list carries every student's mark.
+  { method: 'GET', path: `/api/teach/exercises/${SEED.publishedExerciseId}/reference` },
+  { method: 'GET', path: `/api/teach/exercises/${SEED.publishedExerciseId}/submissions` },
   // Not a route Phase 2 registers. A student must still be refused rather than
   // told which instructor endpoints exist.
   { method: 'GET', path: '/api/teach/reports/anything' },

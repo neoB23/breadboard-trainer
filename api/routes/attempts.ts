@@ -1,21 +1,43 @@
 import { and, asc, count, desc, eq, inArray, isNull, or, type SQL } from 'drizzle-orm'
 import { Hono } from 'hono'
 
+import { z } from 'zod'
+
 import {
   API_ERROR_CODES,
   attemptListQuerySchema,
   attemptSaveRequestSchema,
   attemptStartRequestSchema,
   attemptSubmitRequestSchema,
+  feedbackViewSchema,
+  findingSchema,
+  gradeSchema,
   uuidSchema,
   type AttemptListResponse,
   type AttemptResponse,
   type AttemptResultResponse,
   type AttemptStartResponse,
   type FaultTimelineEntry,
+  type FeedbackView,
+  type Finding,
+  type Grade,
+  type Locale,
 } from '../../shared/contracts/index.ts'
+import { coachAfterSubmit } from '../ai/coach.ts'
+import { buildDigest } from '../ai/digest.ts'
+import { coachConfigFromEnv } from '../ai/provider.ts'
 import { db } from '../db/client.ts'
-import { attempts, classes, events, exerciseStudentColumns, exercises, type Attempt } from '../db/schema.ts'
+import {
+  attempts,
+  classes,
+  events,
+  exerciseInstructorColumns,
+  exerciseStudentColumns,
+  exercises,
+  profiles,
+  type Attempt,
+} from '../db/schema.ts'
+import { gradeSubmission } from '../grading/submit.ts'
 import { isAdmin, sessionOf, type AppEnv, type AppSession } from '../middleware/context.ts'
 import { ApiException } from '../middleware/error.ts'
 import {
@@ -25,7 +47,15 @@ import {
   loadStudentExercise,
 } from '../middleware/ownership.ts'
 import { parseJsonBody, parseParam, parseQuery } from '../middleware/validate.ts'
-import { iso, offsetFor, paginate, toAttempt, toAttemptSummary, toStudentExercise } from './serializers.ts'
+import {
+  iso,
+  offsetFor,
+  paginate,
+  toAttempt,
+  toAttemptSummary,
+  toBom,
+  toStudentExercise,
+} from './serializers.ts'
 
 /**
  * Attempts — one student's run at one exercise, and the row every telemetry
@@ -217,9 +247,22 @@ attemptsRoute.patch('/:id', async (c) => {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Terminal. `submitted_at` is stamped server-side while `durationMs` comes from
- * the client, so the elapsed time the student actually watched is recorded and
- * the two can still be reconciled when a lab machine's clock is wrong.
+ * Terminal, and where the auto score is decided.
+ *
+ * `submitted_at` is stamped server-side while `durationMs` comes from the
+ * client, so the elapsed time the student actually watched is recorded and the
+ * two can still be reconciled when a lab machine's clock is wrong.
+ *
+ * The grade is computed here, from the board as sent, against the reference
+ * circuit the instructor captured — and written in the same statement that
+ * closes the attempt, guarded by `submitted_at is null`. There is no moment at
+ * which an attempt is submitted but ungraded, and a double-click that reaches
+ * the server twice gets a 409 from the database itself, not from a check that
+ * both requests passed.
+ *
+ * Coaching comes after, in a second write. A model that is slow, down or
+ * wrong costs the student nothing but the wording: the grade is already
+ * stored, and the result page renders catalogue text until feedback exists.
  */
 attemptsRoute.post('/:id/submit', async (c) => {
   const session = sessionOf(c)
@@ -229,6 +272,19 @@ attemptsRoute.post('/:id/submit', async (c) => {
   const existing = await loadOwnAttempt(session, id)
   assertOpen(existing)
 
+  // A server-internal read of the reference circuit. Nothing from this row is
+  // serialised: the only thing that leaves is the score it produces.
+  const [exercise] = await db
+    .select(exerciseInstructorColumns)
+    .from(exercises)
+    .where(eq(exercises.id, existing.exerciseId))
+    .limit(1)
+
+  if (!exercise) throw new Error(`attempt ${id} points at a missing exercise ${existing.exerciseId}`)
+
+  const judged = gradeSubmission(body.finalState, toBom(exercise.bom, exercise.id), exercise.goldenNetlist)
+  const now = new Date()
+
   const [submitted] = await db
     .update(attempts)
     .set({
@@ -237,16 +293,44 @@ attemptsRoute.post('/:id/submit', async (c) => {
       hintsUsed: body.hintsUsed,
       faultsEncountered: body.faultsEncountered,
       faultsSelfResolved: body.faultsSelfResolved,
-      completed: body.completed,
-      submittedAt: new Date(),
+      // The server's judgement, never the client's.
+      completed: judged.completed,
+      submittedAt: now,
+      score: judged.graded?.grade.score ?? null,
+      scoreBreakdown: judged.graded ?? null,
+      gradedAt: judged.graded === null ? null : now,
+      netlistVersion: judged.graded === null ? null : exercise.netlistVersion,
     })
+    .where(and(eq(attempts.id, id), isNull(attempts.submittedAt)))
+    .returning()
+
+  if (!submitted) {
+    throw new ApiException(409, API_ERROR_CODES.conflict, 'This attempt has already been submitted.')
+  }
+
+  if (judged.graded === null) return c.json<AttemptResponse>({ attempt: toAttempt(submitted) })
+
+  const digest = buildDigest(judged.graded.grade, judged.graded.findings, await localeOf(session.userId))
+  const coached = await coachAfterSubmit(digest, coachConfigFromEnv())
+
+  const [withFeedback] = await db
+    .update(attempts)
+    .set({ feedback: coached })
     .where(eq(attempts.id, id))
     .returning()
 
-  if (!submitted) throw new Error(`attempt ${id} vanished mid-submit`)
-
-  return c.json<AttemptResponse>({ attempt: toAttempt(submitted) })
+  return c.json<AttemptResponse>({ attempt: toAttempt(withFeedback ?? submitted) })
 })
+
+/** The student's language, for the words the coach writes. English if unreadable. */
+async function localeOf(userId: string): Promise<Locale> {
+  const [row] = await db
+    .select({ locale: profiles.locale })
+    .from(profiles)
+    .where(eq(profiles.id, userId))
+    .limit(1)
+  return row?.locale === 'fil' ? 'fil' : 'en'
+}
 
 /**
  * A submitted attempt is immutable. A second submit is a conflict rather than a
@@ -286,12 +370,44 @@ attemptsRoute.get('/:id/result', async (c) => {
 
   if (!exercise) throw new Error(`attempt ${id} points at a missing exercise ${attempt.exerciseId}`)
 
+  const submitted = attempt.submittedAt !== null
+  const breakdown = submitted ? readBreakdown(attempt.scoreBreakdown, id) : null
+
   return c.json<AttemptResultResponse>({
     attempt: toAttempt(attempt),
     exercise: toStudentExercise(exercise),
     faultTimeline: await faultTimeline(id),
+    grade: breakdown?.grade ?? null,
+    findings: breakdown?.findings ?? [],
+    // Released the moment the attempt is submitted (build plan v1.3). A graded
+    // attempt with no stored feedback — the coach step never finished — reads
+    // as catalogue text, which is exactly what it would have fallen back to.
+    feedback: breakdown === null ? null : (readFeedback(attempt.feedback) ?? RULES_FEEDBACK),
+    stale: attempt.netlistVersion !== null && attempt.netlistVersion !== exercise.netlistVersion,
   })
 })
+
+const storedBreakdownSchema = z.object({ grade: gradeSchema, findings: z.array(findingSchema) })
+const storedFeedbackSchema = z.object({ view: feedbackViewSchema })
+const RULES_FEEDBACK: FeedbackView = { source: 'rules', suggestions: [], praise: null }
+
+/** jsonb written by an earlier release may not parse; an unreadable grade is shown as no grade, and logged. */
+function readBreakdown(value: unknown, attemptId: string): { grade: Grade; findings: Finding[] } | null {
+  if (value === null || value === undefined) return null
+  const parsed = storedBreakdownSchema.safeParse(value)
+  if (parsed.success) return parsed.data
+  console.warn(`[api] attempt ${attemptId} has an unreadable score breakdown`)
+  return null
+}
+
+/**
+ * Only the view leaves. The model tag, latency and grounding verdict stored
+ * beside it are for whoever tunes the coach, not for the student reading it.
+ */
+function readFeedback(value: unknown): FeedbackView | null {
+  const parsed = storedFeedbackSchema.safeParse(value)
+  return parsed.success ? parsed.data.view : null
+}
 
 /**
  * Fault isolation time — the headline number of the results chapter — is a

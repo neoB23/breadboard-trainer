@@ -202,6 +202,8 @@ export function toAttemptSummary(row: Attempt): WireAttemptSummary {
     faultsEncountered: row.faultsEncountered,
     faultsSelfResolved: row.faultsSelfResolved,
     durationMs: row.durationMs,
+    score: row.score,
+    gradedAt: isoOrNull(row.gradedAt),
   }
 }
 

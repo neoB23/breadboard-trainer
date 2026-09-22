@@ -1,34 +1,48 @@
-import { count, desc, eq, inArray, or, sql, type SQL } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNotNull, or, sql, type SQL } from 'drizzle-orm'
 import { Hono } from 'hono'
 
 import { API_ERROR_CODES, uuidSchema } from '../../shared/contracts/index.ts'
 // This whole route is instructor-only, which is why it reaches past the barrel.
 import {
-  captureNetlistRequestSchema,
+  captureReferenceRequestSchema,
   exerciseCreateRequestSchema,
   exercisePublishRequestSchema,
   exerciseUpdateRequestSchema,
-  type CaptureNetlistResponse,
-  type InstructorExerciseListResponse,
+  goldenNetlistV2Schema,
   type InstructorExerciseResponse,
-  type InstructorExerciseSummary,
+  type TeachExercise,
+  type TeachExerciseListResponse,
 } from '../../shared/contracts/exercises-instructor.ts'
+import type {
+  CaptureReferenceResponse,
+  ReferenceViewResponse,
+  SubmissionsResponse,
+  TeachExerciseResponse,
+} from '../../shared/contracts/teach-authoring.ts'
+import { parseBoardState } from '../../src/board/model.ts'
+import { buildGoldenNetlist, validateReference } from '../../src/board/netlist.ts'
 import { db } from '../db/client.ts'
-import { attempts, classes, exerciseStudentColumns, exercises } from '../db/schema.ts'
+import { attempts, classes, exerciseStudentColumns, exercises, profiles } from '../db/schema.ts'
 import { isAdmin, sessionOf, type AppEnv } from '../middleware/context.ts'
 import { ApiException } from '../middleware/error.ts'
 import { loadOwnedClass, loadOwnedExercise } from '../middleware/ownership.ts'
 import { parseJsonBody, parseParam } from '../middleware/validate.ts'
-import { iso, toInstructorExercise, toStudentExercise } from './serializers.ts'
+import { iso, toBom, toInstructorExercise, toStudentExercise } from './serializers.ts'
 
 /**
- * /api/teach/exercises/* — authoring, publishing, and Learn Mode capture.
+ * /api/teach/exercises/* — authoring, publishing, Learn Mode capture and the
+ * scores list.
  *
  * This is the only place in the API where `golden_netlist` is legitimately
  * read, and it happens behind `requireRole('instructor')` (applied in app.ts)
- * plus `loadOwnedExercise()` per handler. Note which of the two reads below
- * uses the instructor projection: the **detail** endpoint does, the **list**
- * does not — see `summaries()`.
+ * plus `loadOwnedExercise()` per handler.
+ *
+ * Exactly one endpoint returns the netlist itself: `GET /:id`, for the API and
+ * its tests. Everything the teacher's screens call — the list, create, edit,
+ * publish, capture — answers with the teacher view instead (`hasReference`,
+ * never the netlist), and Learn Mode reads the instructor's board back under
+ * `referenceBoard` from `GET /:id/reference`. That keeps the golden netlist's
+ * shape out of every bundle, the instructor's included.
  */
 export const teachExercisesRoute = new Hono<AppEnv>()
 
@@ -49,7 +63,7 @@ teachExercisesRoute.get('/', async (c) => {
         ),
       )
 
-  return c.json<InstructorExerciseListResponse>({ items: await summaries(mine) })
+  return c.json<TeachExerciseListResponse>({ items: await teachExercises(mine) })
 })
 
 teachExercisesRoute.post('/', async (c) => {
@@ -72,21 +86,22 @@ teachExercisesRoute.post('/', async (c) => {
       difficulty: body.difficulty,
       schematicUrl: body.schematicUrl ?? null,
       bom: body.bom,
-      // Not settable here. A netlist arrives through Learn Mode and nowhere
-      // else, because capture is what runs the Phase 12 validity checks.
+      // Not settable here. A reference arrives through Learn Mode and nowhere
+      // else, because capture is what runs the validity checks.
       published: false,
     })
-    .returning()
+    .returning({ id: exercises.id })
 
   if (!created) throw new Error('exercise insert did not read back')
 
-  return c.json<InstructorExerciseResponse>({ exercise: toInstructorExercise(created) }, 201)
+  return c.json<TeachExerciseResponse>({ exercise: await teachExercise(created.id) }, 201)
 })
 
 /* -------------------------------------------------------------------------- */
 /* GET, PATCH /api/teach/exercises/:id                                        */
 /* -------------------------------------------------------------------------- */
 
+/** The one response that carries the netlist. No screen calls it. */
 teachExercisesRoute.get('/:id', async (c) => {
   const session = sessionOf(c)
   const id = parseParam(c, 'id', uuidSchema)
@@ -95,16 +110,27 @@ teachExercisesRoute.get('/:id', async (c) => {
   return c.json<InstructorExerciseResponse>({ exercise: toInstructorExercise(row) })
 })
 
+/**
+ * A change to the bill of materials clears the captured reference. The
+ * reference was built from the old tray; keeping it would grade students
+ * against parts they were never given. The exercise unpublishes with it and
+ * the capture revision moves on, so attempts graded before are marked stale.
+ * The authoring screen warns before sending such a change.
+ */
 teachExercisesRoute.patch('/:id', async (c) => {
   const session = sessionOf(c)
   const id = parseParam(c, 'id', uuidSchema)
   const body = await parseJsonBody(c, exerciseUpdateRequestSchema)
 
-  await loadOwnedExercise(session, id)
+  const existing = await loadOwnedExercise(session, id)
 
   if (body.classId !== undefined && body.classId !== null) {
     await loadOwnedClass(session, body.classId)
   }
+
+  const bomChanged =
+    body.bom !== undefined && JSON.stringify(body.bom) !== JSON.stringify(toBom(existing.bom, existing.id))
+  const clearReference = bomChanged && existing.goldenNetlist !== null
 
   const [updated] = await db
     .update(exercises)
@@ -115,13 +141,21 @@ teachExercisesRoute.patch('/:id', async (c) => {
       ...(body.classId !== undefined && { classId: body.classId }),
       ...(body.schematicUrl !== undefined && { schematicUrl: body.schematicUrl }),
       ...(body.bom !== undefined && { bom: body.bom }),
+      ...(clearReference && {
+        goldenNetlist: null,
+        netlistVersion: existing.netlistVersion + 1,
+        published: false,
+      }),
     })
     .where(eq(exercises.id, id))
-    .returning()
+    .returning({ id: exercises.id })
 
   if (!updated) throw new Error(`exercise ${id} vanished mid-update`)
 
-  return c.json<InstructorExerciseResponse>({ exercise: toInstructorExercise(updated) })
+  return c.json<TeachExerciseResponse>({
+    exercise: await teachExercise(id),
+    referenceCleared: clearReference,
+  })
 })
 
 /* -------------------------------------------------------------------------- */
@@ -130,12 +164,9 @@ teachExercisesRoute.patch('/:id', async (c) => {
 
 /**
  * Publishing is its own endpoint rather than a field on PATCH so the one guard
- * it needs lives in one place: an exercise with no captured netlist cannot be
- * published.
- *
- * Without that check a student could start a Part B exercise the comparator has
- * no reference for, which does not fail loudly — it silently reports every
- * correct circuit as "substantially different".
+ * it needs lives in one place: an exercise without a gradable reference cannot
+ * be published. "Gradable" means the canonical form — the pre-comparator
+ * placeholder some old rows carry is a reference in name only.
  */
 teachExercisesRoute.post('/:id/publish', async (c) => {
   const session = sessionOf(c)
@@ -144,7 +175,7 @@ teachExercisesRoute.post('/:id/publish', async (c) => {
 
   const existing = await loadOwnedExercise(session, id)
 
-  if (body.published && existing.goldenNetlist === null) {
+  if (body.published && !goldenNetlistV2Schema.safeParse(existing.goldenNetlist).success) {
     throw new ApiException(
       409,
       API_ERROR_CODES.exerciseNotPublished,
@@ -156,11 +187,11 @@ teachExercisesRoute.post('/:id/publish', async (c) => {
     .update(exercises)
     .set({ published: body.published })
     .where(eq(exercises.id, id))
-    .returning()
+    .returning({ id: exercises.id })
 
   if (!updated) throw new Error(`exercise ${id} vanished mid-publish`)
 
-  return c.json<InstructorExerciseResponse>({ exercise: toInstructorExercise(updated) })
+  return c.json<TeachExerciseResponse>({ exercise: await teachExercise(id) })
 })
 
 /* -------------------------------------------------------------------------- */
@@ -168,77 +199,176 @@ teachExercisesRoute.post('/:id/publish', async (c) => {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Learn Mode capture. Phase 12 wires the button and adds the circuit-validity
- * checks that run before this is called (no floating leads, no shorts, every
- * BOM part used); the persistence half is here now so the shape is settled
- * before the workspace starts producing netlists.
+ * Learn Mode capture. The instructor sends the board they built; the server
+ * reads it with the same parser the student's submission goes through,
+ * refuses it if it would not earn full marks itself (a short, an unprotected
+ * LED, a lead touching nothing, a tray part left over), and derives the
+ * netlist from it. The netlist the comparator reads therefore always matches
+ * the board Learn Mode shows.
  *
- * Re-capture bumps `netlist_version`, which is what lets an in-flight attempt
- * detect that the reference it was being judged against has moved. It requires
- * `confirmReplace` because it invalidates every attempt already made.
+ * Re-capture bumps `netlist_version`, which marks every attempt graded against
+ * the old reference as stale. It requires `confirmReplace` because of that,
+ * and it unpublishes: whatever was published was judged against the old
+ * reference, and quietly swapping it under a live class is how a lab section
+ * spends an afternoon chasing phantom faults.
  */
 teachExercisesRoute.post('/:id/capture', async (c) => {
   const session = sessionOf(c)
   const id = parseParam(c, 'id', uuidSchema)
-  const body = await parseJsonBody(c, captureNetlistRequestSchema)
+  const body = await parseJsonBody(c, captureReferenceRequestSchema)
 
   const existing = await loadOwnedExercise(session, id)
+  const bom = toBom(existing.bom, existing.id)
+  const bomIds = new Set(bom.map((item) => item.id))
+
+  // A part from a tray line that no longer exists cannot be in the answer key.
+  const parts = parseBoardState(body.board, bom).filter((part) => bomIds.has(part.bomItemId))
+
+  const issues = validateReference(parts, bom)
+  if (issues.length > 0) {
+    throw new ApiException(
+      422,
+      API_ERROR_CODES.validationFailed,
+      'This circuit cannot be the reference yet. Fix what is listed and capture again.',
+      Object.fromEntries(issues.map((issue) => [issue.reason, issue.labels])),
+    )
+  }
+
   const replacing = existing.goldenNetlist !== null
 
   if (replacing && !body.confirmReplace) {
     throw new ApiException(
       409,
       API_ERROR_CODES.conflict,
-      'This exercise already has a captured netlist. Confirm the replacement to continue.',
+      'This exercise already has a reference circuit. Confirm the replacement to continue.',
     )
   }
 
   const [invalidated] = replacing
-    ? await db.select({ value: count() }).from(attempts).where(eq(attempts.exerciseId, id))
+    ? await db
+        .select({ value: count() })
+        .from(attempts)
+        .where(and(eq(attempts.exerciseId, id), isNotNull(attempts.gradedAt)))
     : []
 
   const [updated] = await db
     .update(exercises)
     .set({
-      goldenNetlist: body.netlist,
+      goldenNetlist: buildGoldenNetlist(parts),
       // First capture stays at version 1 — the column defaults to it, and a
-      // freshly authored exercise has no attempts to invalidate.
-      ...(replacing && { netlistVersion: existing.netlistVersion + 1 }),
-      // A replaced netlist unpublishes. Whatever was published was judged
-      // against the old reference, and quietly swapping it under a live class
-      // is how a lab section spends an afternoon chasing phantom faults.
-      ...(replacing && { published: false }),
+      // freshly authored exercise has nothing graded to invalidate.
+      ...(replacing && { netlistVersion: existing.netlistVersion + 1, published: false }),
     })
     .where(eq(exercises.id, id))
-    .returning({ netlistVersion: exercises.netlistVersion })
+    .returning({ id: exercises.id })
 
   if (!updated) throw new Error(`exercise ${id} vanished mid-capture`)
 
-  return c.json<CaptureNetlistResponse>({
-    netlistVersion: updated.netlistVersion,
+  return c.json<CaptureReferenceResponse>({
+    exercise: await teachExercise(id),
     capturedAt: iso(new Date()),
     invalidatedAttempts: invalidated?.value ?? 0,
   })
 })
 
 /* -------------------------------------------------------------------------- */
-/* List projection                                                            */
+/* GET /api/teach/exercises/:id/reference                                     */
+/* -------------------------------------------------------------------------- */
+
+/** What Learn Mode puts back on the board. Null until a gradable reference exists. */
+teachExercisesRoute.get('/:id/reference', async (c) => {
+  const session = sessionOf(c)
+  const id = parseParam(c, 'id', uuidSchema)
+
+  const existing = await loadOwnedExercise(session, id)
+  const parsed = goldenNetlistV2Schema.safeParse(existing.goldenNetlist)
+
+  return c.json<ReferenceViewResponse>({
+    exercise: await teachExercise(id),
+    reference: parsed.success
+      ? {
+          referenceBoard: parsed.data.referenceBoard,
+          components: parsed.data.components.length,
+          nets: parsed.data.nets.length,
+        }
+      : null,
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* GET /api/teach/exercises/:id/submissions                                   */
 /* -------------------------------------------------------------------------- */
 
 /**
- * The authoring list needs a "captured / not captured" badge, which is a
+ * The scores list: every student's handed-in attempt, newest first. An
+ * instructor trying their own exercise out is not a submission, so only
+ * student rows are listed.
+ */
+teachExercisesRoute.get('/:id/submissions', async (c) => {
+  const session = sessionOf(c)
+  const id = parseParam(c, 'id', uuidSchema)
+
+  const existing = await loadOwnedExercise(session, id)
+
+  const rows = await db
+    .select({
+      attemptId: attempts.id,
+      studentId: attempts.studentId,
+      fullName: profiles.fullName,
+      studentNumber: profiles.studentNumber,
+      submittedAt: attempts.submittedAt,
+      score: attempts.score,
+      completed: attempts.completed,
+      durationMs: attempts.durationMs,
+      netlistVersion: attempts.netlistVersion,
+    })
+    .from(attempts)
+    .innerJoin(profiles, eq(profiles.id, attempts.studentId))
+    .where(and(eq(attempts.exerciseId, id), isNotNull(attempts.submittedAt), eq(profiles.role, 'student')))
+    .orderBy(desc(attempts.submittedAt))
+
+  return c.json<SubmissionsResponse>({
+    exercise: await teachExercise(id),
+    items: rows.flatMap((row) =>
+      row.submittedAt === null
+        ? []
+        : [
+            {
+              attemptId: row.attemptId,
+              studentId: row.studentId,
+              fullName: row.fullName,
+              studentNumber: row.studentNumber,
+              submittedAt: iso(row.submittedAt),
+              score: row.score,
+              completed: row.completed,
+              durationMs: row.durationMs,
+              stale: row.netlistVersion !== null && row.netlistVersion !== existing.netlistVersion,
+            },
+          ],
+    ),
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+/* The teacher's view                                                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The authoring screens need a "captured / not captured" badge, which is a
  * boolean — not the netlist itself. So this selects `exerciseStudentColumns`
- * plus an `is not null` test, and every reference circuit in the class stays in
+ * plus a test on the stored format, and every reference circuit stays in
  * Postgres instead of being shipped down to render a list of titles.
  *
- * That is the same instinct as the golden netlist rule one level up: fetch the
- * answer to the question you are asking, not the row that contains it.
+ * "Has a reference" means a *gradable* one, format 2. The pre-comparator
+ * placeholder does not count, because nothing can be scored against it.
  */
-async function summaries(where: SQL | undefined): Promise<InstructorExerciseSummary[]> {
+async function teachExercises(where: SQL | undefined): Promise<TeachExercise[]> {
   const rows = await db
     .select({
       ...exerciseStudentColumns,
-      hasGoldenNetlist: sql<boolean>`${exercises.goldenNetlist} is not null`.mapWith(Boolean),
+      hasReference: sql<boolean>`coalesce((${exercises.goldenNetlist} ->> 'version') = '2', false)`.mapWith(
+        Boolean,
+      ),
     })
     .from(exercises)
     .where(where)
@@ -261,7 +391,13 @@ async function summaries(where: SQL | undefined): Promise<InstructorExerciseSumm
 
   return rows.map((row) => ({
     ...toStudentExercise(row),
-    hasGoldenNetlist: row.hasGoldenNetlist,
+    hasReference: row.hasReference,
     attemptCount: byExercise.get(row.id) ?? 0,
   }))
+}
+
+async function teachExercise(id: string): Promise<TeachExercise> {
+  const [row] = await teachExercises(eq(exercises.id, id))
+  if (!row) throw new Error(`exercise ${id} vanished before it could be read back`)
+  return row
 }

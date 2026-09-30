@@ -1,2 +1,18 @@
 User-agent: *
 Allow: /
+
+# Past the landing page everything needs an account or a one-time token,
+# so there is nothing a crawler can usefully read.
+Disallow: /dashboard
+Disallow: /onboarding
+Disallow: /settings
+Disallow: /sandbox
+Disallow: /lab/
+Disallow: /teach
+Disallow: /results/
+Disallow: /styleguide
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+
+Sitemap: https://breadboard-trainer.vercel.app/sitemap.xml

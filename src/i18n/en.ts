@@ -123,6 +123,7 @@ export const en = {
   'landing.footer.note':
     'The workspace, the diagnostics engine and Learn Mode land in the phases after this one.',
   'landing.footer.badge': 'Part A · student shell',
+  'landing.footer.builtBy': 'Built by',
 
   /* ---- 404 -------------------------------------------------------------- */
   'notFound.eyebrow': 'Error 404',

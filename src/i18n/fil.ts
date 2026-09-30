@@ -114,6 +114,7 @@ export const fil: Catalog = {
   'landing.footer.note':
     'Ang workspace, ang diagnostics engine at ang Learn Mode ay darating sa mga susunod na yugto.',
   'landing.footer.badge': 'Part A · student shell',
+  'landing.footer.builtBy': 'Ginawa ni',
 
   /* ---- 404 -------------------------------------------------------------- */
   'notFound.eyebrow': 'Error 404',

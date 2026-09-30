@@ -264,10 +264,21 @@ export function LandingPage() {
       </section>
 
       <footer className="mx-auto w-full max-w-shell px-4 sm:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 py-10">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 pt-10">
           <p className="max-w-prose text-sm text-text-secondary">{t('landing.footer.note')}</p>
           <StatusBadge tone="info">{t('landing.footer.badge')}</StatusBadge>
         </div>
+        <p className="pb-10 text-sm text-text-secondary">
+          {t('landing.footer.builtBy')}{' '}
+          <a
+            href="https://justdevv.vercel.app"
+            target="_blank"
+            rel="author noopener noreferrer"
+            className="font-medium text-accent underline-offset-4 hover:underline"
+          >
+            Justin Neo Parlan
+          </a>
+        </p>
       </footer>
     </AppShell>
   )
